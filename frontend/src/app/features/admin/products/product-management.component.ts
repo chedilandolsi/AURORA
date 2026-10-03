@@ -91,7 +91,11 @@ import { ImageUrlPipe } from '../../../core/pipes/image-url.pipe';
                 <!-- Mask Image & Name -->
                 <td class="py-3.5 px-4">
                   <div class="flex items-center gap-3">
-                    <img [src]="product.primaryImageUrl | imageUrl" [alt]="product.name" class="w-12 h-14 object-cover rounded-lg border border-aurora-border flex-shrink-0" />
+                    <img 
+                      [src]="(product.primaryImageUrl || product.images || product) | imageUrl" 
+                      [alt]="product.name" 
+                      (error)="$any($event.target).src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80'"
+                      class="w-12 h-14 object-cover rounded-lg border border-aurora-border flex-shrink-0" />
                     <div>
                       <p class="font-serif font-bold text-white text-sm hover:text-aurora-gold transition-colors">{{ product.name }}</p>
                       <p class="text-[10px] text-aurora-sand/40 font-mono">ID: {{ product.id.substring(0, 8) }}...</p>

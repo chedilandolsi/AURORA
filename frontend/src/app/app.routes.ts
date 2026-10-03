@@ -41,11 +41,6 @@ export const routes: Routes = [
     path: 'auth/oauth2-redirect',
     loadComponent: () => import('./features/auth/oauth2-redirect.component').then(m => m.OAuth2RedirectComponent)
   },
-  {
-    path: 'track',
-    loadComponent: () => import('./features/tracking/order-tracking.component').then(m => m.OrderTrackingComponent),
-    title: 'Track Consignment | Aurora'
-  },
   // Admin Routes with RBAC Guard
   {
     path: 'admin',

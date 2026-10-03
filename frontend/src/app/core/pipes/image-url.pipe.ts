@@ -6,13 +6,21 @@ export function resolveImageUrl(input: any): string {
   if (!input) return fallback;
 
   let url = '';
+
   if (typeof input === 'string') {
     url = input.trim();
   } else if (Array.isArray(input) && input.length > 0) {
-    const first = input[0];
-    url = typeof first === 'string' ? first.trim() : (first?.imageUrl?.trim() || '');
-  } else if (typeof input === 'object' && input.imageUrl) {
-    url = input.imageUrl.trim();
+    const primary = input.find((img: any) => img && (img.isPrimary === true || img.primary === true)) || input[0];
+    url = typeof primary === 'string' ? primary.trim() : (primary?.imageUrl?.trim() || '');
+  } else if (typeof input === 'object') {
+    if (input.primaryImageUrl && typeof input.primaryImageUrl === 'string') {
+      url = input.primaryImageUrl.trim();
+    } else if (input.imageUrl && typeof input.imageUrl === 'string') {
+      url = input.imageUrl.trim();
+    } else if (Array.isArray(input.images) && input.images.length > 0) {
+      const primary = input.images.find((img: any) => img && (img.isPrimary === true || img.primary === true)) || input.images[0];
+      url = typeof primary === 'string' ? primary.trim() : (primary?.imageUrl?.trim() || '');
+    }
   }
 
   if (!url) return fallback;

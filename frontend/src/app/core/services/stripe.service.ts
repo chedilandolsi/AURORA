@@ -24,12 +24,6 @@ export class StripeService {
     );
   }
 
-  trackOrderByNumber(orderNumber: string): Observable<ApiResponse<OrderResponse>> {
-    return this.http.get<ApiResponse<OrderResponse>>(
-      `${environment.apiUrl}/orders/track/${orderNumber}`
-    );
-  }
-
   redirectToCheckout(checkoutUrl: string): void {
     if (checkoutUrl) {
       window.location.href = checkoutUrl;

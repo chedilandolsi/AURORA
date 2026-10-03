@@ -54,7 +54,6 @@ import { CurrencyService } from '../../core/services/currency.service';
             <a routerLink="/catalog" [queryParams]="{category: 'abstract'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Abstract</a>
             <a routerLink="/catalog" [queryParams]="{category: 'animals'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Animals</a>
             <a routerLink="/catalog" [queryParams]="{category: 'people'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">People</a>
-            <a routerLink="/track" class="text-aurora-sand/60 hover:text-aurora-gold transition-colors py-1">Track Order</a>
             <a *ngIf="authService.currentUser()?.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" class="px-3 py-1 rounded-full bg-aurora-card border border-aurora-gold/60 text-xs font-semibold text-aurora-gold hover:bg-aurora-gold hover:text-aurora-darker transition-all flex items-center gap-1.5 shadow-sm">
               <span class="w-1.5 h-1.5 rounded-full bg-aurora-gold animate-ping"></span>
               <span>Director Portal</span>
@@ -97,7 +96,6 @@ import { CurrencyService } from '../../core/services/currency.service';
                       <p class="text-sm font-semibold text-aurora-gold truncate">{{ user.email }}</p>
                     </div>
                     <a *ngIf="user.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-gold font-semibold hover:bg-aurora-cardHover">Atelier Director Portal</a>
-                    <a routerLink="/track" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-sand hover:bg-aurora-cardHover hover:text-aurora-gold">Track Order</a>
                     <button (click)="authService.logout(); userMenuOpen = false" class="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-aurora-cardHover">
                       Sign Out
                     </button>
@@ -115,8 +113,9 @@ import { CurrencyService } from '../../core/services/currency.service';
               </ng-template>
             </div>
 
-            <!-- Cart Drawer Button with Bounce Animation -->
+            <!-- Cart Drawer Button with Bounce Animation (Hidden for Admins) -->
             <button 
+              *ngIf="authService.currentUser()?.role !== 'ROLE_ADMIN'"
               (click)="cartService.toggleDrawer()"
               class="relative p-2.5 rounded-full bg-aurora-card border border-aurora-border hover:border-aurora-gold/60 text-aurora-sand hover:text-aurora-gold transition-all duration-200">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,7 +137,7 @@ import { CurrencyService } from '../../core/services/currency.service';
         <a routerLink="/catalog" [queryParams]="{category: 'abstract'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Abstract Masks</a>
         <a routerLink="/catalog" [queryParams]="{category: 'animals'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Animal Spirit Masks</a>
         <a routerLink="/catalog" [queryParams]="{category: 'people'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">People &amp; Ancestral Masks</a>
-        <a routerLink="/track" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/60">Track Order Status</a>
+        <a *ngIf="authService.currentUser()?.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-gold font-semibold">Atelier Director Portal</a>
       </div>
     </header>
   `

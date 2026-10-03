@@ -34,6 +34,7 @@ public class ProductDetailDTO {
     private Long categoryId;
     private String categoryName;
     private String categorySlug;
+    private String primaryImageUrl;
     @Builder.Default
     private List<ProductImageDTO> images = new ArrayList<>();
 }

@@ -152,6 +152,7 @@ public class ProductService {
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .categorySlug(product.getCategory() != null ? product.getCategory().getSlug() : null)
+                .primaryImageUrl(product.getPrimaryImageUrl())
                 .images(imageDTOs)
                 .build();
     }

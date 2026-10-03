@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../core/services/cart.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 
 @Component({
@@ -12,13 +13,14 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
   template: `
     <!-- Backdrop Overlay -->
     <div 
-      *ngIf="cartService.isDrawerOpen()" 
+      *ngIf="cartService.isDrawerOpen() && !authService.currentUser()?.role?.includes('ADMIN')" 
       (click)="cartService.closeDrawer()" 
       class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 transition-opacity">
     </div>
 
     <!-- Drawer Panel -->
     <div 
+      *ngIf="!authService.currentUser()?.role?.includes('ADMIN')"
       class="fixed inset-y-0 right-0 max-w-full flex z-50 transition-transform duration-300 ease-in-out"
       [class.translate-x-0]="cartService.isDrawerOpen()"
       [class.translate-x-full]="!cartService.isDrawerOpen()">
@@ -75,8 +77,9 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
               
               <!-- Product Image -->
               <img 
-                [src]="item.product.primaryImageUrl | imageUrl" 
+                [src]="item.product | imageUrl" 
                 [alt]="item.product.name" 
+                (error)="$any($event.target).src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80'"
                 class="w-20 h-24 object-cover rounded-lg border border-aurora-border flex-shrink-0" />
 
               <!-- Info -->
@@ -185,6 +188,7 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 export class CartDrawerComponent {
   readonly cartService = inject(CartService);
   readonly currencyService = inject(CurrencyService);
+  readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   freeShippingRemaining(): number {

@@ -208,7 +208,11 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
               <!-- Items list -->
               <div class="space-y-4 max-h-72 overflow-y-auto pr-1">
                 <div *ngFor="let item of cartService.items()" class="flex gap-3">
-                  <img [src]="item.product.primaryImageUrl | imageUrl" [alt]="item.product.name" class="w-16 h-20 object-cover rounded-lg border border-aurora-border" />
+                  <img 
+                    [src]="item.product | imageUrl" 
+                    [alt]="item.product.name" 
+                    (error)="$any($event.target).src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80'"
+                    class="w-16 h-20 object-cover rounded-lg border border-aurora-border flex-shrink-0" />
                   <div class="flex-1 min-w-0">
                     <h4 class="font-serif text-xs font-semibold text-white truncate">{{ item.product.name }}</h4>
                     <p class="text-[11px] text-aurora-sand/50 truncate">{{ item.product.woodType }}</p>

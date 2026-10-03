@@ -16,17 +16,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
-@Tag(name = "Orders", description = "Endpoints for order retrieval and tracking")
+@Tag(name = "Orders", description = "Endpoints for order retrieval")
 public class OrderController {
 
     private final OrderService orderService;
-
-    @GetMapping("/track/{orderNumber}")
-    @Operation(summary = "Track order details by order number")
-    public ResponseEntity<ApiResponse<OrderResponse>> trackOrder(@PathVariable String orderNumber) {
-        OrderResponse response = orderService.getOrderByOrderNumber(orderNumber);
-        return ResponseEntity.ok(ApiResponse.ok(response));
-    }
 
     @GetMapping("/my-orders")
     @Operation(summary = "Get order history for authenticated user")

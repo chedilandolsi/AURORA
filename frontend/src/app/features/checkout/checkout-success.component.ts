@@ -77,10 +77,9 @@ import { OrderResponse } from '../../core/models/order.models';
           <!-- Actions -->
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-aurora-border/60">
             <a 
-              routerLink="/track" 
-              [queryParams]="{order: order.orderNumber}"
+              routerLink="/" 
               class="w-full sm:w-auto px-6 py-3 rounded-xl bg-aurora-card hover:bg-aurora-cardHover border border-aurora-border text-xs text-aurora-sand hover:text-white font-semibold transition-colors text-center">
-              Track Shipment Status
+              Return to Atelier
             </a>
             <a 
               routerLink="/catalog" 

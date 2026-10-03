@@ -93,7 +93,6 @@ import { RouterLink } from '@angular/router';
           <div>
             <h5 class="font-serif text-sm font-semibold text-white tracking-wider mb-4 uppercase">Client Care</h5>
             <ul class="space-y-2 text-xs text-aurora-sand/70">
-              <li><a routerLink="/track" class="hover:text-aurora-gold transition-colors">Track Shipment</a></li>
               <li><a routerLink="/cart" class="hover:text-aurora-gold transition-colors">Cart &amp; Checkout</a></li>
               <li><span class="hover:text-aurora-gold transition-colors cursor-pointer">Shipping &amp; Customs</span></li>
               <li><span class="hover:text-aurora-gold transition-colors cursor-pointer">Artisan Wood Care</span></li>
