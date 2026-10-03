@@ -7,6 +7,8 @@ import { CartDrawerComponent } from './shared/components/cart-drawer.component';
 import { AuthService } from './core/services/auth.service';
 import { filter } from 'rxjs';
 
+import { TrafficTrackerService } from './core/services/traffic-tracker.service';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -30,17 +32,21 @@ import { filter } from 'rxjs';
 })
 export class AppComponent {
   private readonly router = inject(Router);
+  private readonly trafficTracker = inject(TrafficTrackerService);
   readonly authService = inject(AuthService);
   isAdminRoute = false;
 
   constructor() {
-    this.isAdminRoute = window.location.pathname.startsWith('/admin');
+    const initialUrl = window.location.pathname;
+    this.isAdminRoute = initialUrl.startsWith('/admin');
+    this.trafficTracker.trackPage(initialUrl);
 
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       const url = event.urlAfterRedirects || event.url || '';
       this.isAdminRoute = url.startsWith('/admin');
+      this.trafficTracker.trackPage(url);
     });
   }
 }

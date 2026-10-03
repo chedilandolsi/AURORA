@@ -1,14 +1,18 @@
 package com.aurora.service;
 
 import com.aurora.dto.admin.AnalyticsSummaryDTO;
+import com.aurora.dto.admin.RecordVisitRequest;
 import com.aurora.model.entity.Category;
 import com.aurora.model.entity.Order;
 import com.aurora.model.entity.OrderItem;
 import com.aurora.model.entity.Product;
+import com.aurora.model.entity.TrafficVisit;
 import com.aurora.repository.CategoryRepository;
 import com.aurora.repository.OrderItemRepository;
 import com.aurora.repository.OrderRepository;
 import com.aurora.repository.ProductRepository;
+import com.aurora.repository.TrafficVisitRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -29,6 +37,7 @@ public class AnalyticsService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final TrafficVisitRepository trafficVisitRepository;
 
     @Transactional(readOnly = true)
     public AnalyticsSummaryDTO getAnalytics(String range) {
@@ -48,14 +57,22 @@ public class AnalyticsService {
                 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        // 2. Revenue Trend Points
+        // 2. Traffic Metrics
+        long totalVisits = trafficVisitRepository.countVisitsSince(startDate);
+        long uniqueVisitors = trafficVisitRepository.countUniqueVisitorsSince(startDate);
+        double conversionRate = totalVisits > 0
+                ? Math.round(((double) totalOrders / totalVisits) * 10000.0) / 100.0
+                : 0.0;
+
+        // 3. Revenue Trend Points
         List<Order> paidOrders = orderRepository.findPaidOrdersSince(startDate);
         List<AnalyticsSummaryDTO.RevenueTrendPointDTO> trendPoints = buildTrendPoints(paidOrders, period, startDate);
 
-        // 3. Top Selling Products Leaderboard
+        // 4. Top Selling Products Leaderboard
         List<AnalyticsSummaryDTO.TopProductDTO> topProducts = buildTopProducts(startDate);
+        AnalyticsSummaryDTO.TopProductDTO mostSoldProduct = topProducts.isEmpty() ? null : topProducts.get(0);
 
-        // 4. Category Sales Distribution
+        // 5. Category Sales Distribution
         List<AnalyticsSummaryDTO.CategorySalesDTO> categoryBreakdown = buildCategoryDistribution(paidOrders, totalRevenue);
 
         return AnalyticsSummaryDTO.builder()
@@ -66,10 +83,74 @@ public class AnalyticsService {
                 .totalOrders(totalOrders)
                 .totalCustomers(totalCustomers)
                 .lowStockCount(lowStockCount)
+                .totalVisits(totalVisits)
+                .uniqueVisitors(uniqueVisitors)
+                .conversionRate(conversionRate)
+                .mostSoldProduct(mostSoldProduct)
                 .revenueTrend(trendPoints)
                 .categoryBreakdown(categoryBreakdown)
                 .topSellingProducts(topProducts)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AnalyticsSummaryDTO.TopProductDTO> getTopSellingProducts(String range) {
+        String period = (range != null) ? range.toUpperCase().trim() : "MONTHLY";
+        Instant startDate = calculateStartDate(period);
+        return buildTopProducts(startDate);
+    }
+
+    @Transactional
+    public void recordVisit(RecordVisitRequest request, HttpServletRequest httpRequest, UUID userId) {
+        try {
+            String clientIp = extractClientIp(httpRequest);
+            String ipHash = hashIp(clientIp);
+            String userAgent = httpRequest != null ? httpRequest.getHeader("User-Agent") : null;
+            if (userAgent != null && userAgent.length() > 255) {
+                userAgent = userAgent.substring(0, 255);
+            }
+            String pageUrl = request != null && request.getPageUrl() != null ? request.getPageUrl() : "/";
+            if (pageUrl.length() > 255) pageUrl = pageUrl.substring(0, 255);
+            String referrer = request != null && request.getReferrer() != null ? request.getReferrer() : null;
+            if (referrer != null && referrer.length() > 255) referrer = referrer.substring(0, 255);
+
+            TrafficVisit visit = TrafficVisit.builder()
+                    .visitorIpHash(ipHash)
+                    .userAgent(userAgent)
+                    .pageUrl(pageUrl)
+                    .referrer(referrer)
+                    .userId(userId)
+                    .build();
+            trafficVisitRepository.save(visit);
+        } catch (Exception e) {
+            log.warn("Failed to record traffic visit: {}", e.getMessage());
+        }
+    }
+
+    private String hashIp(String ip) {
+        if (ip == null || ip.isBlank()) return "anonymous";
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(ip.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            return Integer.toHexString(ip.hashCode());
+        }
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        if (request == null) return "unknown";
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null || xfHeader.isEmpty() || "unknown".equalsIgnoreCase(xfHeader)) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0].trim();
     }
 
     private Instant calculateStartDate(String period) {
@@ -154,10 +235,13 @@ public class AnalyticsService {
             BigDecimal totalRevenue = (BigDecimal) row[4];
 
             int stockRemaining = 0;
+            String primaryImageUrl = "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1000&q=80";
             if (productId != null) {
                 Optional<Product> pOpt = productRepository.findById(productId);
                 if (pOpt.isPresent()) {
-                    stockRemaining = pOpt.get().getStockQuantity();
+                    Product product = pOpt.get();
+                    stockRemaining = product.getStockQuantity();
+                    primaryImageUrl = product.getPrimaryImageUrl();
                 }
             }
 
@@ -165,6 +249,7 @@ public class AnalyticsService {
                     .productId(productId)
                     .productName(productName)
                     .woodType(woodType)
+                    .primaryImageUrl(primaryImageUrl)
                     .unitsSold(unitsSold)
                     .totalRevenue(totalRevenue)
                     .stockRemaining(stockRemaining)

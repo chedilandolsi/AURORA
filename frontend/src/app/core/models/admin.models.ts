@@ -15,6 +15,7 @@ export interface TopProduct {
   productId: string;
   productName: string;
   woodType: string;
+  primaryImageUrl?: string;
   unitsSold: number;
   totalRevenue: number;
   stockRemaining: number;
@@ -28,6 +29,10 @@ export interface AnalyticsSummary {
   totalOrders: number;
   totalCustomers: number;
   lowStockCount: number;
+  totalVisits: number;
+  uniqueVisitors: number;
+  conversionRate: number;
+  mostSoldProduct?: TopProduct | null;
   revenueTrend: RevenueTrendPoint[];
   categoryBreakdown: CategorySales[];
   topSellingProducts: TopProduct[];

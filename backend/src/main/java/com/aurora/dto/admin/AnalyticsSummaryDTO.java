@@ -22,6 +22,15 @@ public class AnalyticsSummaryDTO {
     private long totalOrders;
     private long totalCustomers;
     private long lowStockCount;
+
+    // Traffic / Visit Stats
+    private long totalVisits;
+    private long uniqueVisitors;
+    private double conversionRate; // Percentage of visits converting to orders
+
+    // Product Insights
+    private TopProductDTO mostSoldProduct;
+
     @Builder.Default
     private List<RevenueTrendPointDTO> revenueTrend = new ArrayList<>();
     @Builder.Default
@@ -58,6 +67,7 @@ public class AnalyticsSummaryDTO {
         private UUID productId;
         private String productName;
         private String woodType;
+        private String primaryImageUrl;
         private long unitsSold;
         private BigDecimal totalRevenue;
         private int stockRemaining;
