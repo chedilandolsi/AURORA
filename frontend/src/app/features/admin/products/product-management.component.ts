@@ -178,6 +178,18 @@ import { ImageUrlPipe } from '../../../core/pipes/image-url.pipe';
               </tr>
             </tbody>
           </table>
+
+          <!-- Empty State when 0 Products Exist -->
+          <div *ngIf="products.length === 0" class="py-16 text-center bg-aurora-darker/30">
+            <div class="w-12 h-12 rounded-full bg-aurora-gold/10 border border-aurora-gold/30 flex items-center justify-center mx-auto mb-3 text-aurora-gold">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+            </div>
+            <p class="font-serif text-sm font-semibold text-white">No masks found in atelier inventory</p>
+            <p class="text-xs text-aurora-sand/60 mt-1">No items match your filter, or the catalog is awaiting its first handcrafted mask.</p>
+            <button (click)="openCreateModal()" class="mt-4 px-4 py-2 rounded-xl bg-aurora-gold text-aurora-darker font-bold text-xs">
+              Catalog First Mask
+            </button>
+          </div>
         </div>
       </div>
 

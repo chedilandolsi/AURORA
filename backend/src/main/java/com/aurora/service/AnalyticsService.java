@@ -292,19 +292,6 @@ public class AnalyticsService {
                     .build());
         });
 
-        // If no orders yet, populate category placeholders
-        if (results.isEmpty()) {
-            List<Category> allCats = categoryRepository.findAll();
-            for (Category c : allCats) {
-                results.add(AnalyticsSummaryDTO.CategorySalesDTO.builder()
-                        .categoryName(c.getName())
-                        .totalSales(BigDecimal.ZERO)
-                        .percentage(25.0)
-                        .unitsSold(0)
-                        .build());
-            }
-        }
-
         return results;
     }
 }
