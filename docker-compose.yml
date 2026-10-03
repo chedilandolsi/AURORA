@@ -1,0 +1,22 @@
+services:
+  aurora-postgres:
+    image: postgres:16-alpine
+    container_name: aurora-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: aurora_db
+      POSTGRES_USER: aurora_user
+      POSTGRES_PASSWORD: aurora_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - aurora_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aurora_user -d aurora_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  aurora_pgdata:
+    driver: local
