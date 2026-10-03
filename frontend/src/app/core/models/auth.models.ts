@@ -12,12 +12,15 @@ export interface User {
 export interface AuthResponse {
   token: string;
   tokenType: string;
+  expiresIn?: number;
+  rememberMe?: boolean;
   user: User;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterRequest {

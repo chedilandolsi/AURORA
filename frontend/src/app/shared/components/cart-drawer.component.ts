@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../core/services/cart.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-cart-drawer',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ImageUrlPipe],
   template: `
     <!-- Backdrop Overlay -->
     <div 
@@ -74,7 +75,7 @@ import { CurrencyService } from '../../core/services/currency.service';
               
               <!-- Product Image -->
               <img 
-                [src]="item.product.primaryImageUrl" 
+                [src]="item.product.primaryImageUrl | imageUrl" 
                 [alt]="item.product.name" 
                 class="w-20 h-24 object-cover rounded-lg border border-aurora-border flex-shrink-0" />
 

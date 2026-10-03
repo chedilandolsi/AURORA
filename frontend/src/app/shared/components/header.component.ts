@@ -50,11 +50,15 @@ import { CurrencyService } from '../../core/services/currency.service';
           <!-- Desktop Navigation Links -->
           <nav class="hidden lg:flex items-center space-x-8 font-sans text-sm font-medium tracking-wide">
             <a routerLink="/" routerLinkActive="text-aurora-gold font-semibold" [routerLinkActiveOptions]="{exact: true}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Atelier</a>
-            <a routerLink="/catalog" routerLinkActive="text-aurora-gold font-semibold" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Catalog</a>
-            <a routerLink="/catalog" [queryParams]="{category: 'tribal-masks'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Tribal Masks</a>
-            <a routerLink="/catalog" [queryParams]="{category: 'modern-minimalist'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Modern Minimalist</a>
-            <a routerLink="/catalog" [queryParams]="{category: 'wall-sculptures'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Wall Sculptures</a>
+            <a routerLink="/catalog" routerLinkActive="text-aurora-gold font-semibold" [routerLinkActiveOptions]="{exact: true}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">All Masks</a>
+            <a routerLink="/catalog" [queryParams]="{category: 'abstract'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Abstract</a>
+            <a routerLink="/catalog" [queryParams]="{category: 'animals'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">Animals</a>
+            <a routerLink="/catalog" [queryParams]="{category: 'people'}" class="text-aurora-sand/80 hover:text-aurora-gold transition-colors py-1">People</a>
             <a routerLink="/track" class="text-aurora-sand/60 hover:text-aurora-gold transition-colors py-1">Track Order</a>
+            <a *ngIf="authService.currentUser()?.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" class="px-3 py-1 rounded-full bg-aurora-card border border-aurora-gold/60 text-xs font-semibold text-aurora-gold hover:bg-aurora-gold hover:text-aurora-darker transition-all flex items-center gap-1.5 shadow-sm">
+              <span class="w-1.5 h-1.5 rounded-full bg-aurora-gold animate-ping"></span>
+              <span>Director Portal</span>
+            </a>
           </nav>
 
           <!-- Right Action Controls -->
@@ -92,7 +96,7 @@ import { CurrencyService } from '../../core/services/currency.service';
                       <p class="text-xs text-aurora-sand/60">Signed in as</p>
                       <p class="text-sm font-semibold text-aurora-gold truncate">{{ user.email }}</p>
                     </div>
-                    <a routerLink="/orders" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-sand hover:bg-aurora-cardHover hover:text-aurora-gold">My Orders</a>
+                    <a *ngIf="user.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-gold font-semibold hover:bg-aurora-cardHover">Atelier Director Portal</a>
                     <a routerLink="/track" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-sand hover:bg-aurora-cardHover hover:text-aurora-gold">Track Order</a>
                     <button (click)="authService.logout(); userMenuOpen = false" class="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-aurora-cardHover">
                       Sign Out
@@ -111,14 +115,14 @@ import { CurrencyService } from '../../core/services/currency.service';
               </ng-template>
             </div>
 
-            <!-- Cart Drawer Button -->
+            <!-- Cart Drawer Button with Bounce Animation -->
             <button 
               (click)="cartService.toggleDrawer()"
               class="relative p-2.5 rounded-full bg-aurora-card border border-aurora-border hover:border-aurora-gold/60 text-aurora-sand hover:text-aurora-gold transition-all duration-200">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <span *ngIf="cartService.itemCount() > 0" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-aurora-gold text-aurora-darker text-[11px] font-bold flex items-center justify-center shadow">
+              <span *ngIf="cartService.itemCount() > 0" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-aurora-gold text-aurora-darker text-[11px] font-bold flex items-center justify-center shadow-lg animate-bounce">
                 {{ cartService.itemCount() }}
               </span>
             </button>
@@ -131,10 +135,9 @@ import { CurrencyService } from '../../core/services/currency.service';
       <div *ngIf="mobileMenuOpen" class="lg:hidden border-t border-aurora-border bg-aurora-darker/95 px-4 pt-3 pb-6 space-y-3">
         <a routerLink="/" (click)="mobileMenuOpen = false" class="block py-2 text-base font-medium text-aurora-sand hover:text-aurora-gold">Atelier Home</a>
         <a routerLink="/catalog" (click)="mobileMenuOpen = false" class="block py-2 text-base font-medium text-aurora-sand hover:text-aurora-gold">All Masks Catalog</a>
-        <a routerLink="/catalog" [queryParams]="{category: 'tribal-masks'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Tribal Masks</a>
-        <a routerLink="/catalog" [queryParams]="{category: 'modern-minimalist'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Modern Minimalist</a>
-        <a routerLink="/catalog" [queryParams]="{category: 'wall-sculptures'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Wall Sculptures</a>
-        <a routerLink="/catalog" [queryParams]="{category: 'ceremonial'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Ceremonial</a>
+        <a routerLink="/catalog" [queryParams]="{category: 'abstract'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Abstract Masks</a>
+        <a routerLink="/catalog" [queryParams]="{category: 'animals'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Animal Spirit Masks</a>
+        <a routerLink="/catalog" [queryParams]="{category: 'people'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">People &amp; Ancestral Masks</a>
         <a routerLink="/track" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/60">Track Order Status</a>
       </div>
     </header>

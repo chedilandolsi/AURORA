@@ -48,6 +48,13 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(featured));
     }
 
+    @GetMapping("/on-sale")
+    @Operation(summary = "List artisanal products currently on sale with special discounts")
+    public ResponseEntity<ApiResponse<List<ProductSummaryDTO>>> getOnSaleProducts() {
+        List<ProductSummaryDTO> onSale = productService.getOnSaleProducts();
+        return ResponseEntity.ok(ApiResponse.ok(onSale));
+    }
+
     @GetMapping("/{slug}")
     @Operation(summary = "Get detailed product specifications by slug")
     public ResponseEntity<ApiResponse<ProductDetailDTO>> getProductBySlug(@PathVariable String slug) {

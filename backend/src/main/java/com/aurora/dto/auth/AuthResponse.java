@@ -14,4 +14,6 @@ public class AuthResponse {
     @Builder.Default
     private String tokenType = "Bearer";
     private UserResponse user;
+    private Long expiresIn;
+    private Boolean rememberMe;
 }

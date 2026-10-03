@@ -15,7 +15,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.jpa.domain.Specification;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,13 +47,32 @@ public class ProductService {
         );
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<Product> productPage = productRepository.findFilteredProducts(
-                (categorySlug != null && !categorySlug.trim().isEmpty()) ? categorySlug : null,
-                minPrice,
-                maxPrice,
-                (search != null && !search.trim().isEmpty()) ? search.trim() : null,
-                pageable
-        );
+        Specification<Product> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isTrue(root.get("isActive")));
+
+            if (categorySlug != null && !categorySlug.trim().isEmpty()) {
+                predicates.add(cb.equal(root.get("category").get("slug"), categorySlug.trim()));
+            }
+            if (minPrice != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("priceEur"), minPrice));
+            }
+            if (maxPrice != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("priceEur"), maxPrice));
+            }
+            if (search != null && !search.trim().isEmpty()) {
+                String searchPattern = "%" + search.toLowerCase().trim() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), searchPattern),
+                        cb.like(cb.lower(root.get("shortDescription")), searchPattern),
+                        cb.like(cb.lower(root.get("woodType")), searchPattern)
+                ));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Product> productPage = productRepository.findAll(spec, pageable);
 
         return productPage.map(this::mapToSummaryDTO);
     }
@@ -57,6 +80,13 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductSummaryDTO> getFeaturedProducts() {
         return productRepository.findByIsFeaturedTrueAndIsActiveTrueOrderByCreatedAtDesc().stream()
+                .map(this::mapToSummaryDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductSummaryDTO> getOnSaleProducts() {
+        return productRepository.findByDiscountPercentageGreaterThanAndIsActiveTrueOrderByDiscountPercentageDesc(0).stream()
                 .map(this::mapToSummaryDTO)
                 .collect(Collectors.toList());
     }

@@ -38,6 +38,10 @@ export class ProductService {
     return this.http.get<ApiResponse<ProductSummary[]>>(`${environment.apiUrl}/products/featured`);
   }
 
+  getOnSaleProducts(): Observable<ApiResponse<ProductSummary[]>> {
+    return this.http.get<ApiResponse<ProductSummary[]>>(`${environment.apiUrl}/products/on-sale`);
+  }
+
   getProductBySlug(slug: string): Observable<ApiResponse<ProductDetail>> {
     return this.http.get<ApiResponse<ProductDetail>>(`${environment.apiUrl}/products/${slug}`);
   }

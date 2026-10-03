@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -44,6 +45,29 @@ export const routes: Routes = [
     path: 'track',
     loadComponent: () => import('./features/tracking/order-tracking.component').then(m => m.OrderTrackingComponent),
     title: 'Track Consignment | Aurora'
+  },
+  // Admin Routes with RBAC Guard
+  {
+    path: 'admin',
+    loadComponent: () => import('./features/admin/admin-layout.component').then(m => m.AdminLayoutComponent),
+    canActivate: [adminGuard],
+    children: [
+      {
+        path: '',
+        redirectTo: 'analytics',
+        pathMatch: 'full'
+      },
+      {
+        path: 'analytics',
+        loadComponent: () => import('./features/admin/analytics/analytics-dashboard.component').then(m => m.AnalyticsDashboardComponent),
+        title: 'Sales & Revenue Analytics | Aurora Atelier'
+      },
+      {
+        path: 'products',
+        loadComponent: () => import('./features/admin/products/product-management.component').then(m => m.ProductManagementComponent),
+        title: 'Mask Inventory Management | Aurora Atelier'
+      }
+    ]
   },
   {
     path: '**',

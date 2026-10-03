@@ -6,11 +6,12 @@ import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { Category, ProductFilter, ProductSummary } from '../../core/models/product.models';
+import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ImageUrlPipe],
   template: `
     <div class="bg-aurora-dark min-h-screen py-10">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -115,7 +116,7 @@ import { Category, ProductFilter, ProductSummary } from '../../core/models/produ
               <!-- Image Container -->
               <div class="relative h-80 overflow-hidden bg-aurora-darker cursor-pointer" [routerLink]="['/product', product.slug]">
                 <img 
-                  [src]="product.primaryImageUrl" 
+                  [src]="product.primaryImageUrl | imageUrl" 
                   [alt]="product.name" 
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 

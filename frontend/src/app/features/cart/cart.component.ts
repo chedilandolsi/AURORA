@@ -4,11 +4,12 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ImageUrlPipe],
   template: `
     <div class="bg-aurora-dark min-h-screen py-12">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +52,7 @@ import { CurrencyService } from '../../core/services/currency.service';
               
               <!-- Thumbnail -->
               <img 
-                [src]="item.product.primaryImageUrl" 
+                [src]="item.product.primaryImageUrl | imageUrl" 
                 [alt]="item.product.name" 
                 class="w-full sm:w-28 h-36 object-cover rounded-xl border border-aurora-border flex-shrink-0" />
 

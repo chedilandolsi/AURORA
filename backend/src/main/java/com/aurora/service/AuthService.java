@@ -75,7 +75,9 @@ public class AuthService {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+        boolean rememberMe = Boolean.TRUE.equals(request.getRememberMe());
+        String jwt = tokenProvider.generateToken(authentication, rememberMe);
+        long expiresInMs = tokenProvider.getExpirationDurationMs(rememberMe);
 
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User user = userRepository.findById(userPrincipal.getId())
@@ -84,6 +86,8 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(jwt)
                 .tokenType("Bearer")
+                .expiresIn(expiresInMs)
+                .rememberMe(rememberMe)
                 .user(mapToUserResponse(user))
                 .build();
     }

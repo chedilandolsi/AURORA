@@ -30,6 +30,7 @@ export interface ProductSummary {
   discountPercentage: number;
   stockQuantity: number;
   isFeatured: boolean;
+  isActive?: boolean;
   primaryImageUrl: string;
   categoryId: number;
   categoryName: string;

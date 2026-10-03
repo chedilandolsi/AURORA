@@ -92,6 +92,17 @@ import { AuthService } from '../../core/services/auth.service';
               class="w-full bg-aurora-darker border border-aurora-border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-aurora-gold" />
           </div>
 
+          <!-- Remember Me Checkbox -->
+          <div class="flex items-center justify-between text-xs pt-1">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none text-aurora-sand/80 hover:text-white transition-colors">
+              <input 
+                type="checkbox" 
+                formControlName="rememberMe" 
+                class="w-4 h-4 rounded bg-aurora-darker border-aurora-border text-aurora-gold focus:ring-0 focus:ring-offset-0 transition-colors" />
+              <span>Remember me (30-day session persistence)</span>
+            </label>
+          </div>
+
           <button 
             type="submit" 
             [disabled]="loading"
@@ -155,7 +166,8 @@ export class AuthComponent {
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]]
+    password: ['', [Validators.required]],
+    rememberMe: [true]
   });
 
   registerForm = this.fb.group({
@@ -172,7 +184,8 @@ export class AuthComponent {
 
     this.authService.login({
       email: this.loginForm.value.email!,
-      password: this.loginForm.value.password!
+      password: this.loginForm.value.password!,
+      rememberMe: this.loginForm.value.rememberMe ?? true
     }).subscribe({
       next: () => {
         const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';

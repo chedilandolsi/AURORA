@@ -23,22 +23,35 @@ public class JwtTokenProvider {
 
     private final SecretKey key;
     private final long jwtExpirationMs;
+    private final long rememberMeExpirationMs;
 
     public JwtTokenProvider(
             @Value("${app.jwt.secret}") String jwtSecret,
-            @Value("${app.jwt.expiration-ms}") long jwtExpirationMs) {
+            @Value("${app.jwt.expiration-ms:86400000}") long jwtExpirationMs,
+            @Value("${app.jwt.remember-me-expiration-ms:2592000000}") long rememberMeExpirationMs) {
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpirationMs = jwtExpirationMs;
+        this.rememberMeExpirationMs = rememberMeExpirationMs;
+    }
+
+    public long getExpirationDurationMs(boolean rememberMe) {
+        return rememberMe ? rememberMeExpirationMs : jwtExpirationMs;
     }
 
     public String generateToken(Authentication authentication) {
+        return generateToken(authentication, false);
+    }
+
+    public String generateToken(Authentication authentication, boolean rememberMe) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        long duration = getExpirationDurationMs(rememberMe);
+        Date expiryDate = new Date(now.getTime() + duration);
 
         return Jwts.builder()
                 .subject(userPrincipal.getId().toString())
                 .claim("email", userPrincipal.getEmail())
+                .claim("rememberMe", rememberMe)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
@@ -46,12 +59,18 @@ public class JwtTokenProvider {
     }
 
     public String generateTokenFromUserId(UUID userId, String email) {
+        return generateTokenFromUserId(userId, email, false);
+    }
+
+    public String generateTokenFromUserId(UUID userId, String email, boolean rememberMe) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        long duration = getExpirationDurationMs(rememberMe);
+        Date expiryDate = new Date(now.getTime() + duration);
 
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
+                .claim("rememberMe", rememberMe)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
