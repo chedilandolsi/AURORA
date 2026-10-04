@@ -24,4 +24,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     long countByStockQuantityLessThanEqualAndIsActiveTrue(int threshold);
 
     List<Product> findByDiscountPercentageGreaterThanAndIsActiveTrueOrderByDiscountPercentageDesc(int threshold);
+
+    /** Locks the product row so concurrent orders cannot oversell the same stock. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional<Product> findByIdForUpdate(@Param("id") UUID id);
 }

@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { CartService } from '../../core/services/cart.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { StripeService } from '../../core/services/stripe.service';
+import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CreateCheckoutSessionRequest } from '../../core/models/order.models';
 import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
@@ -161,21 +162,53 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                 </div>
               </div>
 
-              <!-- Payment Method Overview -->
-              <div class="bg-aurora-card border border-aurora-border rounded-2xl p-6 space-y-3">
+              <!-- Payment Method Selection -->
+              <div class="bg-aurora-card border border-aurora-border rounded-2xl p-6 space-y-4">
                 <div class="flex items-center gap-2 pb-3 border-b border-aurora-border/60">
                   <div class="w-6 h-6 rounded-full bg-aurora-darker text-aurora-gold flex items-center justify-center text-xs font-bold">3</div>
-                  <h3 class="font-serif text-base font-semibold text-white">Encrypted Stripe Checkout</h3>
+                  <h3 class="font-serif text-base font-semibold text-white">Select Checkout Method</h3>
                 </div>
 
-                <p class="text-xs text-aurora-sand/70">
-                  You will be securely redirected to Stripe's hosted PCI-DSS compliant checkout session. We support international cards (Visa, MasterCard, Amex), Apple Pay, Google Pay, and European direct debit.
-                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Option 1: Stripe Card -->
+                  <div 
+                    (click)="paymentMethod = 'STRIPE'"
+                    class="cursor-pointer p-4 rounded-xl border transition-all text-left relative"
+                    [ngClass]="paymentMethod === 'STRIPE' ? 'border-aurora-gold bg-aurora-gold/10' : 'border-aurora-border bg-aurora-darker'">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <input type="radio" [checked]="paymentMethod === 'STRIPE'" class="accent-aurora-gold" />
+                        <span class="font-serif text-xs font-bold text-white">Encrypted Card</span>
+                      </div>
+                      <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">Stripe Test/Live</span>
+                    </div>
+                    <p class="text-[11px] text-aurora-sand/70 leading-relaxed">
+                      Instant checkout via Stripe PCI-DSS secure gateway. Cards, Apple Pay, Google Pay.
+                    </p>
+                  </div>
+
+                  <!-- Option 2: Order Without Paying (Manual Approval) -->
+                  <div 
+                    (click)="paymentMethod = 'MANUAL'"
+                    class="cursor-pointer p-4 rounded-xl border transition-all text-left relative"
+                    [ngClass]="paymentMethod === 'MANUAL' ? 'border-aurora-gold bg-aurora-gold/10' : 'border-aurora-border bg-aurora-darker'">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <input type="radio" [checked]="paymentMethod === 'MANUAL'" class="accent-aurora-gold" />
+                        <span class="font-serif text-xs font-bold text-white">Order Without Paying</span>
+                      </div>
+                      <span class="text-[10px] px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-500/30">Manual Approval</span>
+                    </div>
+                    <p class="text-[11px] text-aurora-sand/70 leading-relaxed">
+                      Submit order directly to the atelier without card entry. Reserved stock &amp; artisan review.
+                    </p>
+                  </div>
+                </div>
 
                 <div class="flex items-center gap-3 pt-2 text-xs text-aurora-sand/50">
                   <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">🔒 256-bit TLS</span>
-                  <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">Direct Wise Payout</span>
-                  <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">DHL Express Courier</span>
+                  <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">Artisanal Direct</span>
+                  <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">DHL Express Delivery</span>
                 </div>
               </div>
 
@@ -189,9 +222,15 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                 type="submit" 
                 [disabled]="submitting"
                 class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-aurora-gold via-amber-400 to-aurora-goldLight text-aurora-darker font-bold text-xs uppercase tracking-[0.2em] hover:brightness-110 shadow-xl shadow-aurora-gold/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                <span *ngIf="!submitting">Pay {{ cartService.formattedTotal() }} via Stripe</span>
-                <span *ngIf="submitting">Connecting to Secure Stripe Gateway...</span>
-                <div *ngIf="submitting" class="w-4 h-4 border-2 border-aurora-darker border-t-transparent rounded-full animate-spin"></div>
+                <ng-container *ngIf="!submitting">
+                  <span *ngIf="paymentMethod === 'STRIPE'">Pay {{ cartService.formattedTotal() }} via Stripe</span>
+                  <span *ngIf="paymentMethod === 'MANUAL'">Submit Order for Approval (No Payment Required)</span>
+                </ng-container>
+                <ng-container *ngIf="submitting">
+                  <span *ngIf="paymentMethod === 'STRIPE'">Connecting to Secure Stripe Gateway...</span>
+                  <span *ngIf="paymentMethod === 'MANUAL'">Reserving Masks with Master Artisans...</span>
+                  <div class="w-4 h-4 border-2 border-aurora-darker border-t-transparent rounded-full animate-spin"></div>
+                </ng-container>
               </button>
             </form>
           </div>
@@ -263,11 +302,14 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 })
 export class CheckoutComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
   readonly cartService = inject(CartService);
   readonly currencyService = inject(CurrencyService);
   private readonly stripeService = inject(StripeService);
+  private readonly orderService = inject(OrderService);
   private readonly authService = inject(AuthService);
 
+  paymentMethod: 'STRIPE' | 'MANUAL' = 'STRIPE';
   submitting = false;
   errorMessage = '';
 
@@ -318,16 +360,31 @@ export class CheckoutComponent {
       notes: formVal.notes || undefined
     };
 
-    this.stripeService.createCheckoutSession(request).subscribe({
-      next: (res) => {
-        // Clear cart and redirect to Stripe hosted checkout page
-        this.cartService.clearCart();
-        this.stripeService.redirectToCheckout(res.data.checkoutUrl);
-      },
-      error: (err) => {
-        this.submitting = false;
-        this.errorMessage = err.error?.message || 'Failed to initiate secure Stripe checkout. Please try again.';
-      }
-    });
+    if (this.paymentMethod === 'MANUAL') {
+      this.orderService.placeUnpaidOrder(request).subscribe({
+        next: (res) => {
+          this.cartService.clearCart();
+          this.router.navigate(['/checkout/success'], {
+            queryParams: { order_number: res.data.orderNumber }
+          });
+        },
+        error: (err) => {
+          this.submitting = false;
+          this.errorMessage = err.error?.message || 'Failed to place manual order reservation. Please try again.';
+        }
+      });
+    } else {
+      this.stripeService.createCheckoutSession(request).subscribe({
+        next: (res) => {
+          // Clear cart and redirect to Stripe hosted checkout page
+          this.cartService.clearCart();
+          this.stripeService.redirectToCheckout(res.data.checkoutUrl);
+        },
+        error: (err) => {
+          this.submitting = false;
+          this.errorMessage = err.error?.message || 'Failed to initiate secure Stripe checkout. Please try again.';
+        }
+      });
+    }
   }
 }

@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { PageResponse, ProductDetail } from '../models/product.models';
 import { AnalyticsSummary, CreateProductPayload } from '../models/admin.models';
+import { OrderResponse, OrderStatus, ReviewOrderRequest } from '../models/order.models';
 
 @Injectable({
   providedIn: 'root'
@@ -53,5 +54,28 @@ export class AdminService {
       formData.append('files', file);
     }
     return this.http.post<ApiResponse<{ imageUrls: string[] }>>(`${environment.apiUrl}/admin/products/upload-images`, formData);
+  }
+
+  // --- Orders Management & Manual Confirmation Workflow ---
+  getOrders(status?: OrderStatus): Observable<ApiResponse<OrderResponse[]>> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.http.get<ApiResponse<OrderResponse[]>>(`${environment.apiUrl}/admin/orders`, { params });
+  }
+
+  getOrderById(id: string): Observable<ApiResponse<OrderResponse>> {
+    return this.http.get<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}`);
+  }
+
+  confirmOrder(id: string, reviewNote?: string): Observable<ApiResponse<OrderResponse>> {
+    const payload: ReviewOrderRequest = { reviewNote };
+    return this.http.post<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}/confirm`, payload);
+  }
+
+  rejectOrder(id: string, reviewNote?: string): Observable<ApiResponse<OrderResponse>> {
+    const payload: ReviewOrderRequest = { reviewNote };
+    return this.http.post<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}/reject`, payload);
   }
 }

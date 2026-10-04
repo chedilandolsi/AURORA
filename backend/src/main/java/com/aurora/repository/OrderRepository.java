@@ -26,4 +26,23 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @org.springframework.data.jpa.repository.Query("SELECT o FROM Order o WHERE o.paymentStatus = com.aurora.model.entity.PaymentStatus.PAID AND o.createdAt >= :startDate ORDER BY o.createdAt ASC")
     List<Order> findPaidOrdersSince(@org.springframework.data.repository.query.Param("startDate") java.time.Instant startDate);
+
+    List<Order> findByPaymentMethodOrderByCreatedAtDesc(com.aurora.model.entity.PaymentMethod paymentMethod);
+
+    List<Order> findByPaymentMethodAndStatusOrderByCreatedAtAsc(com.aurora.model.entity.PaymentMethod paymentMethod,
+                                                                com.aurora.model.entity.OrderStatus status);
+
+    List<Order> findByStatusOrderByCreatedAtDesc(com.aurora.model.entity.OrderStatus status);
+
+    List<Order> findAllByOrderByCreatedAtDesc();
+
+    long countByPaymentMethodAndStatus(com.aurora.model.entity.PaymentMethod paymentMethod,
+                                       com.aurora.model.entity.OrderStatus status);
+
+    long countByUserIdAndStatus(UUID userId, com.aurora.model.entity.OrderStatus status);
+
+    /** Locks the order row so two admins cannot confirm/reject the same order concurrently. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") UUID id);
 }

@@ -1,6 +1,7 @@
 package com.aurora.dto.checkout;
 
 import com.aurora.model.entity.OrderStatus;
+import com.aurora.model.entity.PaymentMethod;
 import com.aurora.model.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,11 @@ public class OrderResponse {
     private String shippingState;
     private String shippingPostalCode;
     private String shippingCountry;
+    private String notes;
+    private PaymentMethod paymentMethod;
+    private Instant reviewedAt;
+    private String reviewedBy;
+    private String reviewNote;
     private Instant createdAt;
     @Builder.Default
     private List<OrderItemResponse> items = new ArrayList<>();

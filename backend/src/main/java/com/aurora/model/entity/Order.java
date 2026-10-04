@@ -91,6 +91,20 @@ public class Order {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 20)
+    @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.STRIPE;
+
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
+    @Column(name = "reviewed_by")
+    private String reviewedBy;
+
+    @Column(name = "review_note", columnDefinition = "TEXT")
+    private String reviewNote;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

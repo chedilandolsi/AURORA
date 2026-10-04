@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,6 +33,8 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final CartService cartService;
+    private final EmailService emailService;
     private final SecureRandom random = new SecureRandom();
 
     @Transactional
@@ -51,6 +54,7 @@ public class OrderService {
                 .currency(currency)
                 .status(OrderStatus.PENDING)
                 .paymentStatus(PaymentStatus.UNPAID)
+                .paymentMethod(PaymentMethod.STRIPE)
                 .customerEmail(request.getCustomerEmail().toLowerCase().trim())
                 .customerName(request.getCustomerName().trim())
                 .customerPhone(request.getCustomerPhone())
@@ -107,8 +111,173 @@ public class OrderService {
         order.setTotalAmount(subtotal.add(shippingCost));
 
         Order savedOrder = orderRepository.save(order);
-        log.info("Created pending order #{} for total {} {}", savedOrder.getOrderNumber(), savedOrder.getTotalAmount(), savedOrder.getCurrency());
+        log.info("Created pending Stripe order #{} for total {} {}", savedOrder.getOrderNumber(), savedOrder.getTotalAmount(), savedOrder.getCurrency());
         return savedOrder;
+    }
+
+    @Transactional
+    public OrderResponse placeUnpaidOrder(CreateCheckoutSessionRequest request, UUID userId) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new BadRequestException("Order must contain at least one mask.");
+        }
+
+        String currency = "USD".equalsIgnoreCase(request.getCurrency()) ? "USD" : "EUR";
+
+        User user = null;
+        if (userId != null) {
+            user = userRepository.findById(userId).orElse(null);
+        }
+
+        String orderNumber = generateOrderNumber();
+
+        Order order = Order.builder()
+                .orderNumber(orderNumber)
+                .user(user)
+                .currency(currency)
+                .status(OrderStatus.PENDING_MANUAL_CONFIRMATION)
+                .paymentStatus(PaymentStatus.UNPAID)
+                .paymentMethod(PaymentMethod.MANUAL)
+                .customerEmail(request.getCustomerEmail().toLowerCase().trim())
+                .customerName(request.getCustomerName().trim())
+                .customerPhone(request.getCustomerPhone())
+                .shippingAddressLine1(request.getShippingAddressLine1())
+                .shippingAddressLine2(request.getShippingAddressLine2())
+                .shippingCity(request.getShippingCity())
+                .shippingState(request.getShippingState())
+                .shippingPostalCode(request.getShippingPostalCode())
+                .shippingCountry(request.getShippingCountry())
+                .notes(request.getNotes())
+                .subtotalAmount(BigDecimal.ZERO)
+                .shippingAmount(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.ZERO)
+                .items(new ArrayList<>())
+                .build();
+
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        for (OrderItemRequest itemRequest : request.getItems()) {
+            // Pessimistic write lock to prevent race-condition overselling
+            Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product", "id", itemRequest.getProductId()));
+
+            if (product.getStockQuantity() < itemRequest.getQuantity()) {
+                throw new BadRequestException("Insufficient stock for mask: " + product.getName() + " (Only " + product.getStockQuantity() + " remaining in atelier)");
+            }
+
+            // Reserve/deduct inventory immediately
+            product.setStockQuantity(product.getStockQuantity() - itemRequest.getQuantity());
+            productRepository.save(product);
+
+            BigDecimal unitPrice = "USD".equalsIgnoreCase(currency)
+                    ? product.getDiscountedPriceUsd()
+                    : product.getDiscountedPriceEur();
+
+            BigDecimal itemTotal = unitPrice.multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+            subtotal = subtotal.add(itemTotal);
+
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .productWoodType(product.getWoodType())
+                    .unitPrice(unitPrice)
+                    .quantity(itemRequest.getQuantity())
+                    .totalPrice(itemTotal)
+                    .build();
+
+            order.getItems().add(orderItem);
+        }
+
+        BigDecimal shippingCost = subtotal.compareTo(new BigDecimal("200.00")) >= 0
+                ? BigDecimal.ZERO
+                : new BigDecimal("25.00");
+
+        order.setSubtotalAmount(subtotal);
+        order.setShippingAmount(shippingCost);
+        order.setTotalAmount(subtotal.add(shippingCost));
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Placed manual unpaid order #{} for total {} {} with status {}",
+                savedOrder.getOrderNumber(), savedOrder.getTotalAmount(), savedOrder.getCurrency(), savedOrder.getStatus());
+
+        if (userId != null) {
+            try {
+                cartService.clearCart(userId);
+            } catch (Exception e) {
+                log.warn("Could not clear user cart after unpaid checkout: {}", e.getMessage());
+            }
+        }
+
+        try {
+            emailService.sendManualOrderReceivedEmail(savedOrder);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch order received email: {}", e.getMessage());
+        }
+
+        return mapToResponse(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse confirmManualOrder(UUID orderId, String adminEmail, String reviewNote) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        if (order.getStatus() != OrderStatus.PENDING_MANUAL_CONFIRMATION) {
+            throw new BadRequestException("Order #" + order.getOrderNumber() + " cannot be confirmed because it is in status: " + order.getStatus());
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+        order.setReviewedAt(Instant.now());
+        order.setReviewedBy(adminEmail != null ? adminEmail : "Admin");
+        order.setReviewNote(reviewNote != null && !reviewNote.isBlank() ? reviewNote.trim() : null);
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Admin [{}] CONFIRMED order #{}", adminEmail, savedOrder.getOrderNumber());
+
+        try {
+            emailService.sendOrderConfirmationEmail(savedOrder);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch order confirmation email: {}", e.getMessage());
+        }
+
+        return mapToResponse(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse rejectManualOrder(UUID orderId, String adminEmail, String reviewNote) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        if (order.getStatus() != OrderStatus.PENDING_MANUAL_CONFIRMATION) {
+            throw new BadRequestException("Order #" + order.getOrderNumber() + " cannot be rejected because it is in status: " + order.getStatus());
+        }
+
+        // Restore reserved stock back to atelier inventory
+        for (OrderItem item : order.getItems()) {
+            if (item.getProductId() != null) {
+                productRepository.findByIdForUpdate(item.getProductId()).ifPresent(product -> {
+                    product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+                    productRepository.save(product);
+                    log.info("Restored {} unit(s) of mask [{}] back to inventory due to order rejection.", item.getQuantity(), product.getName());
+                });
+            }
+        }
+
+        order.setStatus(OrderStatus.REJECTED);
+        order.setReviewedAt(Instant.now());
+        order.setReviewedBy(adminEmail != null ? adminEmail : "Admin");
+        order.setReviewNote(reviewNote != null && !reviewNote.isBlank() ? reviewNote.trim() : null);
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Admin [{}] REJECTED order #{} with note: {}", adminEmail, savedOrder.getOrderNumber(), reviewNote);
+
+        try {
+            emailService.sendOrderRejectionEmail(savedOrder, reviewNote);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch order rejection email: {}", e.getMessage());
+        }
+
+        return mapToResponse(savedOrder);
     }
 
     @Transactional
@@ -128,7 +297,7 @@ public class OrderService {
         // Deduct inventory quantities safely
         for (OrderItem item : order.getItems()) {
             if (item.getProductId() != null) {
-                productRepository.findById(item.getProductId()).ifPresent(product -> {
+                productRepository.findByIdForUpdate(item.getProductId()).ifPresent(product -> {
                     int remaining = Math.max(0, product.getStockQuantity() - item.getQuantity());
                     product.setStockQuantity(remaining);
                     productRepository.save(product);
@@ -136,8 +305,32 @@ public class OrderService {
             }
         }
 
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
         log.info("Successfully marked order #{} as PAID with PaymentIntent: {}", order.getOrderNumber(), paymentIntentId);
+
+        try {
+            emailService.sendOrderConfirmationEmail(savedOrder);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch Stripe payment confirmation email: {}", e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrders(OrderStatus status) {
+        List<Order> orders;
+        if (status != null) {
+            orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
+        } else {
+            orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        }
+        return orders.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderById(UUID id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
+        return mapToResponse(order);
     }
 
     @Transactional(readOnly = true)
@@ -179,6 +372,7 @@ public class OrderService {
                 .orderNumber(order.getOrderNumber())
                 .status(order.getStatus())
                 .paymentStatus(order.getPaymentStatus())
+                .paymentMethod(order.getPaymentMethod())
                 .currency(order.getCurrency())
                 .subtotalAmount(order.getSubtotalAmount())
                 .shippingAmount(order.getShippingAmount())
@@ -192,6 +386,10 @@ public class OrderService {
                 .shippingState(order.getShippingState())
                 .shippingPostalCode(order.getShippingPostalCode())
                 .shippingCountry(order.getShippingCountry())
+                .notes(order.getNotes())
+                .reviewedAt(order.getReviewedAt())
+                .reviewedBy(order.getReviewedBy())
+                .reviewNote(order.getReviewNote())
                 .createdAt(order.getCreatedAt())
                 .items(itemResponses)
                 .build();

@@ -36,11 +36,29 @@ export interface OrderItemResponse {
   totalPrice: number;
 }
 
+export type OrderStatus =
+  | 'PENDING'
+  | 'PENDING_MANUAL_CONFIRMATION'
+  | 'CONFIRMED'
+  | 'PAID'
+  | 'PROCESSING'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'REJECTED';
+
+export type PaymentMethod = 'STRIPE' | 'MANUAL';
+
+export interface ReviewOrderRequest {
+  reviewNote?: string;
+}
+
 export interface OrderResponse {
   id: string;
   orderNumber: string;
-  status: string;
+  status: OrderStatus;
   paymentStatus: string;
+  paymentMethod?: PaymentMethod;
   currency: string;
   subtotalAmount: number;
   shippingAmount: number;
@@ -54,6 +72,10 @@ export interface OrderResponse {
   shippingState?: string;
   shippingPostalCode: string;
   shippingCountry: string;
+  notes?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNote?: string;
   createdAt: string;
   items: OrderItemResponse[];
 }

@@ -61,6 +61,11 @@ export const routes: Routes = [
         path: 'products',
         loadComponent: () => import('./features/admin/products/product-management.component').then(m => m.ProductManagementComponent),
         title: 'Mask Inventory Management | Aurora Atelier'
+      },
+      {
+        path: 'orders',
+        loadComponent: () => import('./features/admin/orders/admin-orders.component').then(m => m.AdminOrdersComponent),
+        title: 'Order Fulfillment & Approvals | Aurora Atelier'
       }
     ]
   },

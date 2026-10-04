@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -20,6 +21,24 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+
+    @PostMapping("/place-unpaid")
+    @Operation(summary = "Place order without immediate online payment (Manual confirmation workflow)")
+    public ResponseEntity<ApiResponse<OrderResponse>> placeUnpaidOrder(
+            @jakarta.validation.Valid @RequestBody com.aurora.dto.checkout.CreateCheckoutSessionRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        UUID userId = userPrincipal != null ? userPrincipal.getId() : null;
+        OrderResponse response = orderService.placeUnpaidOrder(request, userId);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.ok("Order placed successfully. Awaiting artisanal confirmation.", response));
+    }
+
+    @GetMapping("/{orderNumber}")
+    @Operation(summary = "Get order details by order number")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderByOrderNumber(@PathVariable String orderNumber) {
+        OrderResponse response = orderService.getOrderByOrderNumber(orderNumber);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
 
     @GetMapping("/my-orders")
     @Operation(summary = "Get order history for authenticated user")

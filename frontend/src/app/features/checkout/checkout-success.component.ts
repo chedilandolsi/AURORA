@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StripeService } from '../../core/services/stripe.service';
+import { OrderService } from '../../core/services/order.service';
 import { OrderResponse } from '../../core/models/order.models';
 
 @Component({
@@ -15,22 +16,36 @@ import { OrderResponse } from '../../core/models/order.models';
         <!-- Loading State -->
         <div *ngIf="loading" class="py-20">
           <div class="w-12 h-12 border-3 border-aurora-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 class="font-serif text-xl text-white">Verifying Stripe Payment Confirmation...</h2>
+          <h2 class="font-serif text-xl text-white">Verifying Order Confirmation...</h2>
           <p class="text-xs text-aurora-sand/60 mt-1">Contacting atelier in Tunisia to confirm order record</p>
         </div>
 
         <!-- Success Order Content -->
         <div *ngIf="!loading && order" class="bg-aurora-card border border-aurora-border rounded-2xl p-8 sm:p-12 text-left space-y-8 shadow-2xl">
           
-          <!-- Top Badge -->
+          <!-- Top Badge: Confirmed vs Pending Manual Approval -->
           <div class="text-center space-y-3 pb-6 border-b border-aurora-border/60">
-            <div class="w-16 h-16 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
+            <div *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="w-16 h-16 rounded-full bg-amber-950/80 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto text-2xl">
+              ⏳
+            </div>
+            <div *ngIf="order.status !== 'PENDING_MANUAL_CONFIRMATION'" class="w-16 h-16 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
               ✓
             </div>
-            <h1 class="font-serif text-3xl font-bold text-white tracking-tight">Order Confirmed &amp; In Preparation</h1>
-            <p class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
+
+            <h1 *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="font-serif text-3xl font-bold text-white tracking-tight">
+              Reservation Placed — Awaiting Artisan Approval
+            </h1>
+            <h1 *ngIf="order.status !== 'PENDING_MANUAL_CONFIRMATION'" class="font-serif text-3xl font-bold text-white tracking-tight">
+              Order Confirmed &amp; In Preparation
+            </h1>
+
+            <p *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
+              Your handcrafted mask reservation has been received. Your pieces are held in our atelier while our master craftsmen inspect inventory and prepare fulfillment. An email confirmation has been dispatched.
+            </p>
+            <p *ngIf="order.status !== 'PENDING_MANUAL_CONFIRMATION'" class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
               Thank you for supporting authentic Tunisian craftsmanship. Master artisans in Kairouan are preparing your handcrafted wooden mask for international DHL Express dispatch.
             </p>
+
             <div class="inline-block px-4 py-2 rounded-xl bg-aurora-darker border border-aurora-gold/30 text-xs font-mono text-aurora-gold mt-2">
               Order Reference: <strong class="text-white">{{ order.orderNumber }}</strong>
             </div>
@@ -49,12 +64,17 @@ import { OrderResponse } from '../../core/models/order.models';
 
             <div class="p-4 rounded-xl bg-aurora-darker border border-aurora-border/60 space-y-2">
               <span class="text-aurora-sand/50 block font-serif uppercase tracking-wider text-[10px]">Settlement &amp; Courier</span>
-              <p class="text-white font-medium">Stripe Payment: <span class="text-emerald-400 font-bold">PAID</span></p>
+              <p class="text-white font-medium">
+                Workflow: 
+                <span *ngIf="order.paymentMethod === 'MANUAL'" class="text-amber-400 font-bold">Manual Confirmation</span>
+                <span *ngIf="order.paymentMethod !== 'MANUAL'" class="text-emerald-400 font-bold">Stripe Card</span>
+              </p>
+              <p class="text-aurora-sand/70">Status: <span class="text-white font-semibold">{{ order.status }}</span></p>
               <p class="text-aurora-sand/70">Currency: {{ order.currency }}</p>
               <p class="text-white font-serif font-bold text-base mt-2">
-                Total Settled: {{ order.currency === 'USD' ? '$' : '€' }}{{ order.totalAmount.toFixed(2) }}
+                Total: {{ order.currency === 'USD' ? '$' : '€' }}{{ order.totalAmount.toFixed(2) }}
               </p>
-              <p class="text-[11px] text-aurora-gold">DHL Express Tracking will be emailed to: {{ order.customerEmail }}</p>
+              <p class="text-[11px] text-aurora-gold">Updates will be emailed to: {{ order.customerEmail }}</p>
             </div>
           </div>
 
@@ -97,6 +117,7 @@ import { OrderResponse } from '../../core/models/order.models';
 export class CheckoutSuccessComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly stripeService = inject(StripeService);
+  private readonly orderService = inject(OrderService);
 
   order: OrderResponse | null = null;
   loading = true;
@@ -104,16 +125,32 @@ export class CheckoutSuccessComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       const sessionId = params['session_id'];
+      const orderNumber = params['order_number'];
+
       if (sessionId) {
-        this.fetchOrder(sessionId);
+        this.fetchOrderBySessionId(sessionId);
+      } else if (orderNumber) {
+        this.fetchOrderByOrderNumber(orderNumber);
       } else {
         this.loading = false;
       }
     });
   }
 
-  fetchOrder(sessionId: string): void {
+  fetchOrderBySessionId(sessionId: string): void {
     this.stripeService.getOrderConfirmationBySessionId(sessionId).subscribe({
+      next: (res) => {
+        this.order = res.data;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
+    });
+  }
+
+  fetchOrderByOrderNumber(orderNumber: string): void {
+    this.orderService.getOrderByOrderNumber(orderNumber).subscribe({
       next: (res) => {
         this.order = res.data;
         this.loading = false;
