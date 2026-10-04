@@ -9,7 +9,5 @@ class AuroraApplicationTests {
 
     @Test
     void contextLoads() {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        System.out.println("BCRYPT_HASH_ADMIN:" + encoder.encode("AdminAurora2026!"));
     }
 }
