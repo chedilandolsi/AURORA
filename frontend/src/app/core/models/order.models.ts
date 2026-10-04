@@ -38,19 +38,44 @@ export interface OrderItemResponse {
 
 export type OrderStatus =
   | 'PENDING'
-  | 'PENDING_MANUAL_CONFIRMATION'
+  | 'PENDING_CONFIRMATION'
   | 'CONFIRMED'
-  | 'PAID'
-  | 'PROCESSING'
-  | 'SHIPPED'
+  | 'ON_THE_WAY'
   | 'DELIVERED'
-  | 'CANCELLED'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'CANCELLED';
 
-export type PaymentMethod = 'STRIPE' | 'MANUAL';
+export type PaymentMethod = 'STRIPE' | 'LOCAL_PSP';
 
 export interface ReviewOrderRequest {
   reviewNote?: string;
+}
+
+export interface ShipOrderRequest {
+  trackingNumber: string;
+  carrier?: string;
+}
+
+export interface TrackingCheckpoint {
+  timestamp: string;
+  status: string;
+  statusCode: string;
+  location: string;
+  description: string;
+  completed: boolean;
+}
+
+export interface TrackingResponse {
+  trackingNumber: string;
+  orderNumber: string;
+  carrier: string;
+  status: string;
+  shippedAt?: string;
+  estimatedDelivery?: string;
+  deliveredAt?: string;
+  origin: string;
+  destination: string;
+  checkpoints: TrackingCheckpoint[];
 }
 
 export interface OrderResponse {
@@ -76,6 +101,10 @@ export interface OrderResponse {
   reviewedAt?: string;
   reviewedBy?: string;
   reviewNote?: string;
+  trackingNumber?: string;
+  carrier?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
   createdAt: string;
   items: OrderItemResponse[];
 }

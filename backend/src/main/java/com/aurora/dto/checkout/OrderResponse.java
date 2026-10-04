@@ -41,6 +41,10 @@ public class OrderResponse {
     private Instant reviewedAt;
     private String reviewedBy;
     private String reviewNote;
+    private String trackingNumber;
+    private String carrier;
+    private Instant shippedAt;
+    private Instant deliveredAt;
     private Instant createdAt;
     @Builder.Default
     private List<OrderItemResponse> items = new ArrayList<>();

@@ -96,7 +96,11 @@ import { CurrencyService } from '../../core/services/currency.service';
                       <p class="text-sm font-semibold text-aurora-gold truncate">{{ user.email }}</p>
                     </div>
                     <a *ngIf="user.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-gold font-semibold hover:bg-aurora-cardHover">Atelier Director Portal</a>
-                    <button (click)="authService.logout(); userMenuOpen = false" class="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-aurora-cardHover">
+                    <a routerLink="/my-orders" (click)="userMenuOpen = false" class="block px-4 py-2 text-sm text-aurora-sand hover:text-white hover:bg-aurora-cardHover flex items-center justify-between">
+                      <span>My Orders &amp; Tracking</span>
+                      <span class="text-xs text-aurora-gold font-mono">DHL</span>
+                    </a>
+                    <button (click)="authService.logout(); userMenuOpen = false" class="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-aurora-cardHover border-t border-aurora-border/40 mt-1 pt-2">
                       Sign Out
                     </button>
                   </div>
@@ -137,6 +141,7 @@ import { CurrencyService } from '../../core/services/currency.service';
         <a routerLink="/catalog" [queryParams]="{category: 'abstract'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Abstract Masks</a>
         <a routerLink="/catalog" [queryParams]="{category: 'animals'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">Animal Spirit Masks</a>
         <a routerLink="/catalog" [queryParams]="{category: 'people'}" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-sand/70 pl-3 border-l-2 border-aurora-gold/40">People &amp; Ancestral Masks</a>
+        <a routerLink="/my-orders" (click)="mobileMenuOpen = false" class="block py-2 text-base font-medium text-amber-400 hover:text-amber-300">My Orders &amp; DHL Tracking</a>
         <a *ngIf="authService.currentUser()?.role === 'ROLE_ADMIN'" routerLink="/admin/analytics" (click)="mobileMenuOpen = false" class="block py-2 text-sm text-aurora-gold font-semibold">Atelier Director Portal</a>
       </div>
     </header>

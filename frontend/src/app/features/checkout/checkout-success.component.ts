@@ -23,26 +23,26 @@ import { OrderResponse } from '../../core/models/order.models';
         <!-- Success Order Content -->
         <div *ngIf="!loading && order" class="bg-aurora-card border border-aurora-border rounded-2xl p-8 sm:p-12 text-left space-y-8 shadow-2xl">
           
-          <!-- Top Badge: Confirmed vs Pending Manual Approval -->
+          <!-- Top Badge: Confirmed vs Pending Confirmation -->
           <div class="text-center space-y-3 pb-6 border-b border-aurora-border/60">
-            <div *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="w-16 h-16 rounded-full bg-amber-950/80 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto text-2xl">
+            <div *ngIf="order.status === 'PENDING_CONFIRMATION'" class="w-16 h-16 rounded-full bg-amber-950/80 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto text-2xl">
               ⏳
             </div>
-            <div *ngIf="order.status !== 'PENDING_MANUAL_CONFIRMATION'" class="w-16 h-16 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
+            <div *ngIf="order.status !== 'PENDING_CONFIRMATION'" class="w-16 h-16 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
               ✓
             </div>
 
-            <h1 *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="font-serif text-3xl font-bold text-white tracking-tight">
-              Reservation Placed — Awaiting Artisan Approval
+            <h1 *ngIf="order.status === 'PENDING_CONFIRMATION'" class="font-serif text-3xl font-bold text-white tracking-tight">
+              Payment Settled — Atelier Review in Progress
             </h1>
-            <h1 *ngIf="order.status !== 'PENDING_MANUAL_CONFIRMATION'" class="font-serif text-3xl font-bold text-white tracking-tight">
+            <h1 *ngIf="order.status !== 'PENDING_CONFIRMATION'" class="font-serif text-3xl font-bold text-white tracking-tight">
               Order Confirmed &amp; In Preparation
             </h1>
 
-            <p *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
-              Your handcrafted mask reservation has been received. Your pieces are held in our atelier while our master craftsmen inspect inventory and prepare fulfillment. An email confirmation has been dispatched.
+            <p *ngIf="order.status === 'PENDING_CONFIRMATION'" class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
+              Your payment has settled securely. Master artisans in Kairouan are currently reviewing your piece for authentic wood grain verification before dispatching via DHL Express.
             </p>
-            <p *ngIf="order.status !== 'PENDING_MANUAL_CONFIRMATION'" class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
+            <p *ngIf="order.status !== 'PENDING_CONFIRMATION'" class="text-xs text-aurora-sand/70 max-w-md mx-auto leading-relaxed">
               Thank you for supporting authentic Tunisian craftsmanship. Master artisans in Kairouan are preparing your handcrafted wooden mask for international DHL Express dispatch.
             </p>
 
@@ -65,11 +65,10 @@ import { OrderResponse } from '../../core/models/order.models';
             <div class="p-4 rounded-xl bg-aurora-darker border border-aurora-border/60 space-y-2">
               <span class="text-aurora-sand/50 block font-serif uppercase tracking-wider text-[10px]">Settlement &amp; Courier</span>
               <p class="text-white font-medium">
-                Workflow: 
-                <span *ngIf="order.paymentMethod === 'MANUAL'" class="text-amber-400 font-bold">Manual Confirmation</span>
-                <span *ngIf="order.paymentMethod !== 'MANUAL'" class="text-emerald-400 font-bold">Stripe Card</span>
+                Gateway: 
+                <span class="text-emerald-400 font-bold">{{ order.paymentMethod || 'STRIPE' }}</span>
               </p>
-              <p class="text-aurora-sand/70">Status: <span class="text-white font-semibold">{{ order.status }}</span></p>
+              <p class="text-aurora-sand/70">Lifecycle Status: <span class="text-amber-400 font-semibold font-mono">{{ order.status }}</span></p>
               <p class="text-aurora-sand/70">Currency: {{ order.currency }}</p>
               <p class="text-white font-serif font-bold text-base mt-2">
                 Total: {{ order.currency === 'USD' ? '$' : '€' }}{{ order.totalAmount.toFixed(2) }}
@@ -97,15 +96,23 @@ import { OrderResponse } from '../../core/models/order.models';
           <!-- Actions -->
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-aurora-border/60">
             <a 
-              routerLink="/" 
-              class="w-full sm:w-auto px-6 py-3 rounded-xl bg-aurora-card hover:bg-aurora-cardHover border border-aurora-border text-xs text-aurora-sand hover:text-white font-semibold transition-colors text-center">
-              Return to Atelier
+              routerLink="/my-orders" 
+              class="w-full sm:w-auto px-6 py-3 rounded-xl bg-aurora-gold text-aurora-darker text-xs font-bold uppercase tracking-wider hover:bg-aurora-goldLight transition-colors text-center shadow-lg shadow-aurora-gold/20 flex items-center justify-center gap-2">
+              <span>Track in My Orders</span>
+              <span>→</span>
             </a>
-            <a 
-              routerLink="/catalog" 
-              class="w-full sm:w-auto px-6 py-3 rounded-xl bg-aurora-gold text-aurora-darker text-xs font-bold uppercase tracking-wider hover:bg-aurora-goldLight transition-colors text-center">
-              Continue Browsing
-            </a>
+            <div class="flex gap-3 w-full sm:w-auto">
+              <a 
+                routerLink="/" 
+                class="flex-1 sm:flex-initial px-5 py-3 rounded-xl bg-aurora-card hover:bg-aurora-cardHover border border-aurora-border text-xs text-aurora-sand hover:text-white font-semibold transition-colors text-center">
+                Atelier Home
+              </a>
+              <a 
+                routerLink="/catalog" 
+                class="flex-1 sm:flex-initial px-5 py-3 rounded-xl bg-aurora-card hover:bg-aurora-cardHover border border-aurora-border text-xs text-aurora-sand hover:text-white font-semibold transition-colors text-center">
+                Catalog
+              </a>
+            </div>
           </div>
 
         </div>

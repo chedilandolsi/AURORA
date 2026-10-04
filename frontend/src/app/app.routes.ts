@@ -33,6 +33,16 @@ export const routes: Routes = [
     title: 'Order Confirmed | Aurora Atelier'
   },
   {
+    path: 'my-orders',
+    loadComponent: () => import('./features/orders/order-history.component').then(m => m.OrderHistoryComponent),
+    title: 'Order History & DHL Live Tracking | Aurora Atelier'
+  },
+  {
+    path: 'orders',
+    redirectTo: 'my-orders',
+    pathMatch: 'full'
+  },
+  {
     path: 'auth',
     loadComponent: () => import('./features/auth/auth.component').then(m => m.AuthComponent),
     title: 'Collector Sign In | Aurora'

@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/auth.models';
 import { PageResponse, ProductDetail } from '../models/product.models';
 import { AnalyticsSummary, CreateProductPayload } from '../models/admin.models';
-import { OrderResponse, OrderStatus, ReviewOrderRequest } from '../models/order.models';
+import { OrderResponse, OrderStatus, ReviewOrderRequest, ShipOrderRequest } from '../models/order.models';
 
 @Injectable({
   providedIn: 'root'
@@ -56,7 +56,7 @@ export class AdminService {
     return this.http.post<ApiResponse<{ imageUrls: string[] }>>(`${environment.apiUrl}/admin/products/upload-images`, formData);
   }
 
-  // --- Orders Management & Manual Confirmation Workflow ---
+  // --- Strict Orders Lifecycle Management & DHL Dispatch ---
   getOrders(status?: OrderStatus): Observable<ApiResponse<OrderResponse[]>> {
     let params = new HttpParams();
     if (status) {
@@ -74,8 +74,17 @@ export class AdminService {
     return this.http.post<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}/confirm`, payload);
   }
 
+  shipOrder(id: string, payload: ShipOrderRequest): Observable<ApiResponse<OrderResponse>> {
+    return this.http.post<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}/ship`, payload);
+  }
+
+  deliverOrder(id: string): Observable<ApiResponse<OrderResponse>> {
+    return this.http.post<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}/deliver`, {});
+  }
+
   rejectOrder(id: string, reviewNote?: string): Observable<ApiResponse<OrderResponse>> {
     const payload: ReviewOrderRequest = { reviewNote };
     return this.http.post<ApiResponse<OrderResponse>>(`${environment.apiUrl}/admin/orders/${id}/reject`, payload);
   }
 }
+

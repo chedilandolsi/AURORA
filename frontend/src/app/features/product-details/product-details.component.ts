@@ -6,11 +6,12 @@ import { CartService } from '../../core/services/cart.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { ProductDetail, ProductImage } from '../../core/models/product.models';
 import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
+import { WallSimulationModalComponent } from '../ai-simulation/wall-simulation-modal.component';
 
 @Component({
   selector: 'app-product-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, ImageUrlPipe],
+  imports: [CommonModule, RouterLink, ImageUrlPipe, WallSimulationModalComponent],
   template: `
     <div class="bg-aurora-dark min-h-screen py-10">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -270,6 +271,30 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                 Instant International Checkout
               </button>
 
+              <!-- AI Wall Simulation CTA -->
+              <div class="p-4 rounded-2xl bg-gradient-to-r from-aurora-gold/15 via-amber-500/10 to-transparent border border-aurora-gold/50 flex items-center justify-between gap-4 shadow-lg shadow-aurora-gold/5">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-aurora-gold/20 border border-aurora-gold/40 text-aurora-gold flex items-center justify-center text-lg shadow-inner">
+                    ✨
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="font-serif font-bold text-white text-xs">Simulate On Your Wall</h4>
+                      <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-aurora-gold/20 text-aurora-gold border border-aurora-gold/30">AI Spatial</span>
+                    </div>
+                    <p class="text-[11px] text-aurora-sand/70 mt-0.5">Upload a photo of your room to preview this mask in real space.</p>
+                  </div>
+                </div>
+
+                <button 
+                  type="button"
+                  (click)="showSimulationModal = true"
+                  class="px-4 py-2.5 rounded-xl bg-aurora-gold text-aurora-darker font-bold text-xs uppercase tracking-wider hover:bg-aurora-goldLight transition-all shadow-md shadow-aurora-gold/20 flex items-center gap-1.5 whitespace-nowrap">
+                  <span>Try It Free</span>
+                  <span>→</span>
+                </button>
+              </div>
+
             </div>
 
             <!-- Guarantee Badges -->
@@ -368,6 +393,13 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
 
       </div>
 
+      <!-- Spatial AI Wall Simulation Modal -->
+      <app-wall-simulation-modal
+        *ngIf="showSimulationModal && product"
+        [product]="product"
+        (close)="showSimulationModal = false">
+      </app-wall-simulation-modal>
+
     </div>
   `
 })
@@ -383,6 +415,7 @@ export class ProductDetailsComponent implements OnInit {
   activeImageIndex: number = 0;
   isTransitioning: boolean = false;
   showFullscreenZoom: boolean = false;
+  showSimulationModal: boolean = false;
   zoomScale: number = 1.0;
 
   quantity: number = 1;

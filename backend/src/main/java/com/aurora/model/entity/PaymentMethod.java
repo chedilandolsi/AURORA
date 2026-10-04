@@ -1,8 +1,8 @@
 package com.aurora.model.entity;
 
 public enum PaymentMethod {
-    /** Paid online through Stripe Checkout. */
+    /** Paid online via Stripe Checkout (international cards / wallets). */
     STRIPE,
-    /** Placed without online payment; settled offline after admin confirmation. */
-    MANUAL
+    /** Tunisian Dinar payment placeholder (Local PSP / Flouci / Konnect). */
+    LOCAL_PSP
 }

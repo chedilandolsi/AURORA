@@ -2,7 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
-import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
+import { OrderService } from '../../../core/services/order.service';
+import { OrderResponse, OrderStatus, TrackingResponse } from '../../../core/models/order.models';
 
 @Component({
   selector: 'app-admin-orders',
@@ -14,12 +15,12 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
       <!-- Top Title & Subtitle -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-aurora-border/60">
         <div>
-          <span class="text-[11px] font-mono uppercase tracking-widest text-aurora-gold">Artisanal Operations</span>
+          <span class="text-[11px] font-mono uppercase tracking-widest text-aurora-gold">Artisanal Operations &amp; Logistics</span>
           <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight mt-1">
-            Order Fulfillment &amp; Manual Approvals
+            Order Fulfillment &amp; DHL Dispatch FSM
           </h1>
           <p class="text-xs text-aurora-sand/60 mt-1">
-            Review customer reservations, approve artisanal mask preparation, restore stock on rejections, and track dispatch status.
+            Strict lifecycle management: Review settled payments, confirm craftsmanship, assign DHL tracking numbers, and finalize deliveries.
           </p>
         </div>
 
@@ -45,31 +46,38 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
       </div>
 
       <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div (click)="selectFilter(null)" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border border-aurora-border hover:border-aurora-gold/50 transition-all">
           <span class="text-[10px] font-mono text-aurora-sand/50 uppercase tracking-wider block">Total Orders</span>
           <div class="text-2xl font-serif font-bold text-white mt-1">{{ allOrders.length }}</div>
         </div>
 
-        <div (click)="selectFilter('PENDING_MANUAL_CONFIRMATION')" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border transition-all"
-          [class.border-amber-500]="activeFilter === 'PENDING_MANUAL_CONFIRMATION'"
-          [class.border-aurora-border]="activeFilter !== 'PENDING_MANUAL_CONFIRMATION'">
+        <div (click)="selectFilter('PENDING_CONFIRMATION')" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border transition-all"
+          [class.border-amber-500]="activeFilter === 'PENDING_CONFIRMATION'"
+          [class.border-aurora-border]="activeFilter !== 'PENDING_CONFIRMATION'">
           <span class="text-[10px] font-mono text-amber-400 uppercase tracking-wider block">Pending Review</span>
-          <div class="text-2xl font-serif font-bold text-amber-400 mt-1">{{ countByStatus('PENDING_MANUAL_CONFIRMATION') }}</div>
+          <div class="text-2xl font-serif font-bold text-amber-400 mt-1">{{ countByStatus('PENDING_CONFIRMATION') }}</div>
         </div>
 
         <div (click)="selectFilter('CONFIRMED')" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border transition-all"
-          [class.border-emerald-500]="activeFilter === 'CONFIRMED'"
+          [class.border-blue-500]="activeFilter === 'CONFIRMED'"
           [class.border-aurora-border]="activeFilter !== 'CONFIRMED'">
-          <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-wider block">Confirmed</span>
-          <div class="text-2xl font-serif font-bold text-emerald-400 mt-1">{{ countByStatus('CONFIRMED') }}</div>
+          <span class="text-[10px] font-mono text-blue-400 uppercase tracking-wider block">Confirmed</span>
+          <div class="text-2xl font-serif font-bold text-blue-400 mt-1">{{ countByStatus('CONFIRMED') }}</div>
         </div>
 
-        <div (click)="selectFilter('REJECTED')" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border transition-all"
-          [class.border-rose-500]="activeFilter === 'REJECTED'"
-          [class.border-aurora-border]="activeFilter !== 'REJECTED'">
-          <span class="text-[10px] font-mono text-rose-400 uppercase tracking-wider block">Rejected</span>
-          <div class="text-2xl font-serif font-bold text-rose-400 mt-1">{{ countByStatus('REJECTED') }}</div>
+        <div (click)="selectFilter('ON_THE_WAY')" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border transition-all"
+          [class.border-purple-500]="activeFilter === 'ON_THE_WAY'"
+          [class.border-aurora-border]="activeFilter !== 'ON_THE_WAY'">
+          <span class="text-[10px] font-mono text-purple-400 uppercase tracking-wider block">On The Way</span>
+          <div class="text-2xl font-serif font-bold text-purple-400 mt-1">{{ countByStatus('ON_THE_WAY') }}</div>
+        </div>
+
+        <div (click)="selectFilter('DELIVERED')" class="cursor-pointer p-4 rounded-2xl bg-aurora-card border transition-all"
+          [class.border-emerald-500]="activeFilter === 'DELIVERED'"
+          [class.border-aurora-border]="activeFilter !== 'DELIVERED'">
+          <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-wider block">Delivered</span>
+          <div class="text-2xl font-serif font-bold text-emerald-400 mt-1">{{ countByStatus('DELIVERED') }}</div>
         </div>
       </div>
 
@@ -86,36 +94,50 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
             [class.hover:text-white]="activeFilter !== null">
             All ({{ allOrders.length }})
           </button>
+          
           <button 
-            (click)="selectFilter('PENDING_MANUAL_CONFIRMATION')"
+            (click)="selectFilter('PENDING_CONFIRMATION')"
             class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
-            [class.bg-amber-500]="activeFilter === 'PENDING_MANUAL_CONFIRMATION'"
-            [class.text-aurora-darker]="activeFilter === 'PENDING_MANUAL_CONFIRMATION'"
-            [class.text-amber-400]="activeFilter !== 'PENDING_MANUAL_CONFIRMATION'"
-            [class.hover:text-amber-300]="activeFilter !== 'PENDING_MANUAL_CONFIRMATION'">
+            [class.bg-amber-500]="activeFilter === 'PENDING_CONFIRMATION'"
+            [class.text-aurora-darker]="activeFilter === 'PENDING_CONFIRMATION'"
+            [class.text-amber-400]="activeFilter !== 'PENDING_CONFIRMATION'"
+            [class.hover:text-amber-300]="activeFilter !== 'PENDING_CONFIRMATION'">
             <span>Pending Review</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-950/80 text-amber-300 border border-amber-500/30">
-              {{ countByStatus('PENDING_MANUAL_CONFIRMATION') }}
+              {{ countByStatus('PENDING_CONFIRMATION') }}
             </span>
           </button>
+
           <button 
             (click)="selectFilter('CONFIRMED')"
             class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
-            [class.bg-emerald-500]="activeFilter === 'CONFIRMED'"
+            [class.bg-blue-500]="activeFilter === 'CONFIRMED'"
             [class.text-aurora-darker]="activeFilter === 'CONFIRMED'"
             [class.text-aurora-sand]="activeFilter !== 'CONFIRMED'"
             [class.hover:text-white]="activeFilter !== 'CONFIRMED'">
             Confirmed ({{ countByStatus('CONFIRMED') }})
           </button>
+
           <button 
-            (click)="selectFilter('PAID')"
+            (click)="selectFilter('ON_THE_WAY')"
             class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
-            [class.bg-blue-500]="activeFilter === 'PAID'"
-            [class.text-aurora-darker]="activeFilter === 'PAID'"
-            [class.text-aurora-sand]="activeFilter !== 'PAID'"
-            [class.hover:text-white]="activeFilter !== 'PAID'">
-            Stripe Paid ({{ countByStatus('PAID') }})
+            [class.bg-purple-500]="activeFilter === 'ON_THE_WAY'"
+            [class.text-aurora-darker]="activeFilter === 'ON_THE_WAY'"
+            [class.text-aurora-sand]="activeFilter !== 'ON_THE_WAY'"
+            [class.hover:text-white]="activeFilter !== 'ON_THE_WAY'">
+            On The Way ({{ countByStatus('ON_THE_WAY') }})
           </button>
+
+          <button 
+            (click)="selectFilter('DELIVERED')"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+            [class.bg-emerald-500]="activeFilter === 'DELIVERED'"
+            [class.text-aurora-darker]="activeFilter === 'DELIVERED'"
+            [class.text-aurora-sand]="activeFilter !== 'DELIVERED'"
+            [class.hover:text-white]="activeFilter !== 'DELIVERED'">
+            Delivered ({{ countByStatus('DELIVERED') }})
+          </button>
+
           <button 
             (click)="selectFilter('REJECTED')"
             class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
@@ -132,7 +154,7 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
           <input 
             type="text" 
             [(ngModel)]="searchQuery"
-            placeholder="Search order #, customer, email..." 
+            placeholder="Search order #, tracking, email..." 
             class="w-full bg-aurora-darker border border-aurora-border rounded-xl px-4 py-2 text-xs text-white placeholder-aurora-sand/40 focus:outline-none focus:border-aurora-gold" />
           <span class="absolute right-3 top-2.5 text-aurora-sand/40 text-xs">🔍</span>
         </div>
@@ -153,7 +175,7 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
           </div>
           <h3 class="font-serif text-lg text-white font-medium">No Orders in this Queue</h3>
           <p class="text-xs text-aurora-sand/60 max-w-sm mx-auto">
-            There are currently no customer orders matching the selected filter. As new reservations or payments are submitted, they will appear here in real-time.
+            There are currently no customer orders matching the selected filter.
           </p>
         </div>
 
@@ -165,10 +187,11 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
                 <th class="px-5 py-3.5">Order Ref</th>
                 <th class="px-5 py-3.5">Date</th>
                 <th class="px-5 py-3.5">Customer / Destination</th>
-                <th class="px-5 py-3.5">Method</th>
-                <th class="px-5 py-3.5">Status</th>
+                <th class="px-5 py-3.5">Payment</th>
+                <th class="px-5 py-3.5">FSM Status</th>
+                <th class="px-5 py-3.5">DHL Tracking</th>
                 <th class="px-5 py-3.5 text-right">Total</th>
-                <th class="px-5 py-3.5 text-center">Actions</th>
+                <th class="px-5 py-3.5 text-center">Lifecycle Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-aurora-border/40">
@@ -194,32 +217,44 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
                   <div class="text-[10px] text-aurora-sand/40">{{ order.shippingCity }}, {{ order.shippingCountry }}</div>
                 </td>
 
-                <!-- Method -->
+                <!-- Payment -->
                 <td class="px-5 py-4 whitespace-nowrap">
-                  <span *ngIf="order.paymentMethod === 'MANUAL'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950/60 border border-amber-500/30 text-amber-300">
-                    ✍️ Manual
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/60 border border-emerald-500/30 text-emerald-300">
+                    💳 {{ order.paymentMethod || 'STRIPE' }}
                   </span>
-                  <span *ngIf="order.paymentMethod !== 'MANUAL'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950/60 border border-blue-500/30 text-blue-300">
-                    💳 Stripe
-                  </span>
+                  <div class="text-[10px] text-aurora-sand/40 mt-0.5">{{ order.paymentStatus }}</div>
                 </td>
 
                 <!-- Status Badge -->
                 <td class="px-5 py-4 whitespace-nowrap">
-                  <span *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-950/80 border border-amber-500/40 text-amber-400">
+                  <span *ngIf="order.status === 'PENDING_CONFIRMATION'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-950/80 border border-amber-500/40 text-amber-400">
                     ⏳ Pending Review
                   </span>
-                  <span *ngIf="order.status === 'CONFIRMED'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/80 border border-emerald-500/40 text-emerald-400">
+                  <span *ngIf="order.status === 'CONFIRMED'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-950/80 border border-blue-500/40 text-blue-400">
                     ✓ Confirmed
                   </span>
-                  <span *ngIf="order.status === 'PAID'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-950/80 border border-blue-500/40 text-blue-300">
-                    ✓ Paid
+                  <span *ngIf="order.status === 'ON_THE_WAY'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-950/80 border border-purple-500/40 text-purple-300">
+                    ✈️ On The Way
+                  </span>
+                  <span *ngIf="order.status === 'DELIVERED'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/80 border border-emerald-500/40 text-emerald-400">
+                    🎉 Delivered
                   </span>
                   <span *ngIf="order.status === 'REJECTED'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-950/80 border border-rose-500/40 text-rose-400">
                     ✕ Rejected
                   </span>
-                  <span *ngIf="order.status === 'PENDING'" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300">
-                    Pending
+                </td>
+
+                <!-- Tracking -->
+                <td class="px-5 py-4 whitespace-nowrap">
+                  <div *ngIf="order.trackingNumber" class="flex items-center gap-1.5">
+                    <span 
+                      (click)="viewTracking(order)"
+                      class="cursor-pointer font-mono text-[11px] text-amber-400 hover:text-amber-300 underline bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/30">
+                      {{ order.trackingNumber }}
+                    </span>
+                  </div>
+                  <span *ngIf="!order.trackingNumber" class="text-aurora-sand/40 text-[11px] italic">
+                    Not dispatched
                   </span>
                 </td>
 
@@ -231,13 +266,14 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
                 <!-- Actions -->
                 <td class="px-5 py-4 text-center whitespace-nowrap">
                   <div class="flex items-center justify-center gap-2">
-                    <!-- Action Buttons for Pending Review -->
-                    <ng-container *ngIf="order.status === 'PENDING_MANUAL_CONFIRMATION'">
+                    
+                    <!-- 1. PENDING_CONFIRMATION: Confirm or Reject -->
+                    <ng-container *ngIf="order.status === 'PENDING_CONFIRMATION'">
                       <button 
                         (click)="openConfirmModal(order)"
-                        title="Confirm order & dispatch email"
+                        title="Confirm order & approve artisan preparation"
                         class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] transition-colors shadow">
-                        Confirm
+                        Approve
                       </button>
                       <button 
                         (click)="openRejectModal(order)"
@@ -247,6 +283,28 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
                       </button>
                     </ng-container>
 
+                    <!-- 2. CONFIRMED: Ship with DHL Tracking Number -->
+                    <ng-container *ngIf="order.status === 'CONFIRMED'">
+                      <button 
+                        (click)="openShipModal(order)"
+                        title="Ship via DHL / Poste Rapide"
+                        class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-[11px] transition-colors shadow flex items-center gap-1">
+                        <span>✈️</span>
+                        <span>Dispatch DHL</span>
+                      </button>
+                    </ng-container>
+
+                    <!-- 3. ON_THE_WAY: Mark Delivered -->
+                    <ng-container *ngIf="order.status === 'ON_THE_WAY'">
+                      <button 
+                        (click)="deliverOrder(order)"
+                        title="Mark as delivered"
+                        class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] transition-colors shadow">
+                        Mark Delivered
+                      </button>
+                    </ng-container>
+
+                    <!-- General Details Button -->
                     <button 
                       (click)="openDetailModal(order)" 
                       title="View full order details"
@@ -289,6 +347,22 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
               <p class="text-aurora-sand/70">{{ selectedOrder.shippingCity }}, {{ selectedOrder.shippingPostalCode }}</p>
               <p class="text-aurora-sand/70">{{ selectedOrder.shippingCountry }}</p>
             </div>
+          </div>
+
+          <!-- Tracking Pill in Modal if Shipped -->
+          <div *ngIf="selectedOrder.trackingNumber" class="p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 text-xs flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-amber-400 uppercase block">DHL Express Tracking</span>
+              <span class="font-mono text-white text-sm font-bold">{{ selectedOrder.trackingNumber }}</span>
+              <span *ngIf="selectedOrder.shippedAt" class="text-aurora-sand/60 block text-[10px]">
+                Shipped on {{ selectedOrder.shippedAt | date:'medium' }}
+              </span>
+            </div>
+            <button 
+              (click)="viewTracking(selectedOrder)"
+              class="px-3 py-1.5 rounded-lg bg-amber-500 text-aurora-darker font-bold text-xs hover:bg-amber-400 transition-colors">
+              Inspect Live DHL Route
+            </button>
           </div>
 
           <!-- Notes if any -->
@@ -347,16 +421,24 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
               Close
             </button>
 
-            <div *ngIf="selectedOrder.status === 'PENDING_MANUAL_CONFIRMATION'" class="flex items-center gap-2">
+            <div class="flex items-center gap-2">
               <button 
+                *ngIf="selectedOrder.status === 'PENDING_CONFIRMATION'"
                 (click)="openRejectModal(selectedOrder)"
                 class="px-4 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-wider">
                 Reject Order
               </button>
               <button 
+                *ngIf="selectedOrder.status === 'PENDING_CONFIRMATION'"
                 (click)="openConfirmModal(selectedOrder)"
                 class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider">
-                Confirm Order
+                Approve Order
+              </button>
+              <button 
+                *ngIf="selectedOrder.status === 'CONFIRMED'"
+                (click)="openShipModal(selectedOrder)"
+                class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider">
+                Dispatch DHL
               </button>
             </div>
           </div>
@@ -371,12 +453,12 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
             <div class="w-10 h-10 rounded-full bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-lg">✓</div>
             <div>
               <h3 class="font-serif text-base font-bold text-white">Confirm Order #{{ orderToConfirm.orderNumber }}</h3>
-              <p class="text-[11px] text-aurora-sand/60">Approve fulfillment &amp; notify collector</p>
+              <p class="text-[11px] text-aurora-sand/60">Approve fulfillment &amp; prepare packaging</p>
             </div>
           </div>
 
           <p class="text-xs text-aurora-sand/80 leading-relaxed">
-            Confirming this order locks its status to <strong>CONFIRMED</strong>, instructs the Sidi Bou Saïd atelier to begin cedar box packaging, and dispatches a luxury confirmation email to <strong>{{ orderToConfirm.customerEmail }}</strong>.
+            Confirming this order locks its status to <strong>CONFIRMED</strong>, instructs the Sidi Bou Saïd atelier to begin cedar box packaging, and dispatches a confirmation email to <strong>{{ orderToConfirm.customerEmail }}</strong>.
           </p>
 
           <div>
@@ -399,8 +481,66 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
               [disabled]="actionLoading"
               (click)="executeConfirm()" 
               class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2">
-              <span *ngIf="!actionLoading">Approve &amp; Send Email</span>
+              <span *ngIf="!actionLoading">Approve &amp; Prepare</span>
               <span *ngIf="actionLoading">Processing...</span>
+              <div *ngIf="actionLoading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SHIP VIA DHL MODAL ================= -->
+      <div *ngIf="orderToShip" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div class="bg-aurora-card border border-aurora-border rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
+          <div class="flex items-center gap-3 text-purple-400">
+            <div class="w-10 h-10 rounded-full bg-purple-950/80 border border-purple-500/40 flex items-center justify-center text-lg">✈️</div>
+            <div>
+              <h3 class="font-serif text-base font-bold text-white">Dispatch Order #{{ orderToShip.orderNumber }}</h3>
+              <p class="text-[11px] text-aurora-sand/60">Input DHL / Poste Rapide tracking dossier</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-aurora-sand/80 leading-relaxed">
+            Entering the official tracking number transitions the order to <strong class="text-purple-400 font-mono">ON_THE_WAY</strong> and immediately triggers an automated notification email to the customer with their live DHL tracking link.
+          </p>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-mono text-aurora-sand/70 uppercase mb-1">
+                Official DHL / Poste Rapide Tracking Number *
+              </label>
+              <input 
+                type="text" 
+                [(ngModel)]="shipTrackingNumber" 
+                placeholder="e.g. DHL-TN-84920392 or 10-digit DHL code" 
+                class="w-full bg-aurora-darker border border-aurora-border rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-purple-500" />
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-mono text-aurora-sand/70 uppercase mb-1">
+                Express Carrier
+              </label>
+              <input 
+                type="text" 
+                [(ngModel)]="shipCarrier" 
+                placeholder="DHL Express International (Tunisia)" 
+                class="w-full bg-aurora-darker border border-aurora-border rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-purple-500" />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button 
+              [disabled]="actionLoading"
+              (click)="orderToShip = null" 
+              class="px-4 py-2 rounded-xl bg-aurora-darker border border-aurora-border text-aurora-sand text-xs font-semibold hover:text-white">
+              Cancel
+            </button>
+            <button 
+              [disabled]="actionLoading || !shipTrackingNumber.trim()"
+              (click)="executeShip()" 
+              class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 disabled:opacity-50">
+              <span *ngIf="!actionLoading">Dispatch &amp; Notify</span>
+              <span *ngIf="actionLoading">Dispatching...</span>
               <div *ngIf="actionLoading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             </button>
           </div>
@@ -419,7 +559,7 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
           </div>
 
           <p class="text-xs text-aurora-sand/80 leading-relaxed">
-            Rejecting this order marks it as <strong>REJECTED</strong>, automatically restores all reserved mask pieces back to the public catalog inventory, and emails the collector with your reason.
+            Rejecting this order marks it as <strong>REJECTED</strong>, automatically restores all reserved mask pieces back to catalog inventory with pessimistic lock safety, and emails the collector.
           </p>
 
           <div>
@@ -450,11 +590,72 @@ import { OrderResponse, OrderStatus } from '../../../core/models/order.models';
         </div>
       </div>
 
+      <!-- ================= LIVE DHL TRACKING INSPECTION MODAL ================= -->
+      <div *ngIf="inspectingTracking" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+        <div class="bg-aurora-card border border-aurora-border rounded-2xl w-full max-w-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+          
+          <div class="flex items-start justify-between border-b border-aurora-border/60 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-lg font-bold">
+                DHL
+              </div>
+              <div>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-aurora-gold">Live Courier Milestones</span>
+                <h3 class="font-serif text-lg font-bold text-white">Tracking #{{ inspectingTracking.trackingNumber }}</h3>
+              </div>
+            </div>
+            <button (click)="inspectingTracking = null" class="text-aurora-sand/60 hover:text-white text-lg">✕</button>
+          </div>
+
+          <!-- Origin & Destination Banner -->
+          <div class="grid grid-cols-2 gap-4 text-xs bg-aurora-darker p-4 rounded-xl border border-aurora-border/60">
+            <div>
+              <span class="text-[10px] font-mono text-aurora-sand/50 uppercase block">Origin Atelier</span>
+              <p class="text-white font-medium">{{ inspectingTracking.origin }}</p>
+            </div>
+            <div>
+              <span class="text-[10px] font-mono text-aurora-sand/50 uppercase block">Destination</span>
+              <p class="text-white font-medium">{{ inspectingTracking.destination }}</p>
+            </div>
+          </div>
+
+          <!-- Milestones Timeline -->
+          <div class="space-y-4 max-h-72 overflow-y-auto pr-2">
+            <div *ngFor="let cp of inspectingTracking.checkpoints; let last = last" class="flex gap-4">
+              <div class="flex flex-col items-center">
+                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                  [ngClass]="cp.completed ? 'bg-amber-400 border-amber-400' : 'bg-aurora-darker border-aurora-border'">
+                  <div *ngIf="cp.completed" class="w-1.5 h-1.5 rounded-full bg-aurora-darker"></div>
+                </div>
+                <div *ngIf="!last" class="w-0.5 flex-1 bg-aurora-border/80 my-1"></div>
+              </div>
+              <div class="pb-4 flex-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-white">{{ cp.status }}</span>
+                  <span class="text-[10px] font-mono text-aurora-sand/50">{{ cp.timestamp | date:'medium' }}</span>
+                </div>
+                <div class="text-[11px] text-aurora-gold font-mono">{{ cp.location }}</div>
+                <p class="text-xs text-aurora-sand/70 mt-1 leading-relaxed">{{ cp.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-aurora-border/60 flex justify-end">
+            <button 
+              (click)="inspectingTracking = null" 
+              class="px-5 py-2 rounded-xl bg-aurora-darker border border-aurora-border text-aurora-sand text-xs font-semibold hover:text-white">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   `
 })
 export class AdminOrdersComponent implements OnInit {
   private readonly adminService = inject(AdminService);
+  private readonly orderService = inject(OrderService);
 
   allOrders: OrderResponse[] = [];
   activeFilter: OrderStatus | null = null;
@@ -464,6 +665,11 @@ export class AdminOrdersComponent implements OnInit {
   selectedOrder: OrderResponse | null = null;
   orderToConfirm: OrderResponse | null = null;
   orderToReject: OrderResponse | null = null;
+  orderToShip: OrderResponse | null = null;
+  inspectingTracking: TrackingResponse | null = null;
+
+  shipTrackingNumber = '';
+  shipCarrier = 'DHL Express International';
   actionNote = '';
   actionLoading = false;
 
@@ -501,6 +707,7 @@ export class AdminOrdersComponent implements OnInit {
         o.orderNumber.toLowerCase().includes(q) ||
         o.customerName.toLowerCase().includes(q) ||
         o.customerEmail.toLowerCase().includes(q) ||
+        (o.trackingNumber && o.trackingNumber.toLowerCase().includes(q)) ||
         (o.shippingCity && o.shippingCity.toLowerCase().includes(q)) ||
         (o.shippingCountry && o.shippingCountry.toLowerCase().includes(q))
       );
@@ -533,6 +740,15 @@ export class AdminOrdersComponent implements OnInit {
     this.actionNote = '';
   }
 
+  openShipModal(order: OrderResponse): void {
+    this.selectedOrder = null;
+    this.orderToShip = order;
+    // Auto-generate realistic DHL tracking format suggestion
+    const randomSuffix = Math.floor(10000000 + Math.random() * 90000000);
+    this.shipTrackingNumber = `DHL-TN-${randomSuffix}`;
+    this.shipCarrier = 'DHL Express International';
+  }
+
   executeConfirm(): void {
     if (!this.orderToConfirm) return;
     this.actionLoading = true;
@@ -540,15 +756,52 @@ export class AdminOrdersComponent implements OnInit {
     const orderNumber = this.orderToConfirm.orderNumber;
 
     this.adminService.confirmOrder(orderId, this.actionNote).subscribe({
-      next: (res) => {
+      next: () => {
         this.actionLoading = false;
         this.orderToConfirm = null;
-        this.showFeedback(`Order #${orderNumber} confirmed successfully. Preparation started and email dispatched.`, 'success');
+        this.showFeedback(`Order #${orderNumber} confirmed. Atelier preparation underway.`, 'success');
         this.loadOrders();
       },
       error: (err) => {
         this.actionLoading = false;
         this.showFeedback(`Error confirming order: ${err.error?.message || err.message}`, 'error');
+      }
+    });
+  }
+
+  executeShip(): void {
+    if (!this.orderToShip || !this.shipTrackingNumber.trim()) return;
+    this.actionLoading = true;
+    const orderId = this.orderToShip.id;
+    const orderNumber = this.orderToShip.orderNumber;
+
+    this.adminService.shipOrder(orderId, {
+      trackingNumber: this.shipTrackingNumber.trim(),
+      carrier: this.shipCarrier.trim()
+    }).subscribe({
+      next: () => {
+        this.actionLoading = false;
+        this.orderToShip = null;
+        this.showFeedback(`Order #${orderNumber} marked ON_THE_WAY with DHL tracking ${this.shipTrackingNumber}. Dispatch email sent!`, 'success');
+        this.loadOrders();
+      },
+      error: (err) => {
+        this.actionLoading = false;
+        this.showFeedback(`Error shipping order: ${err.error?.message || err.message}`, 'error');
+      }
+    });
+  }
+
+  deliverOrder(order: OrderResponse): void {
+    if (!confirm(`Mark Order #${order.orderNumber} as DELIVERED?`)) return;
+
+    this.adminService.deliverOrder(order.id).subscribe({
+      next: () => {
+        this.showFeedback(`Order #${order.orderNumber} finalized as DELIVERED.`, 'success');
+        this.loadOrders();
+      },
+      error: (err) => {
+        this.showFeedback(`Error delivering order: ${err.error?.message || err.message}`, 'error');
       }
     });
   }
@@ -560,15 +813,26 @@ export class AdminOrdersComponent implements OnInit {
     const orderNumber = this.orderToReject.orderNumber;
 
     this.adminService.rejectOrder(orderId, this.actionNote).subscribe({
-      next: (res) => {
+      next: () => {
         this.actionLoading = false;
         this.orderToReject = null;
-        this.showFeedback(`Order #${orderNumber} rejected. Inventory restored to catalog and email dispatched.`, 'success');
+        this.showFeedback(`Order #${orderNumber} rejected. Inventory restored to catalog.`, 'success');
         this.loadOrders();
       },
       error: (err) => {
         this.actionLoading = false;
         this.showFeedback(`Error rejecting order: ${err.error?.message || err.message}`, 'error');
+      }
+    });
+  }
+
+  viewTracking(order: OrderResponse): void {
+    this.orderService.getOrderTracking(order.id).subscribe({
+      next: (res) => {
+        this.inspectingTracking = res.data;
+      },
+      error: (err) => {
+        this.showFeedback(`Failed to load DHL tracking: ${err.error?.message || err.message}`, 'error');
       }
     });
   }

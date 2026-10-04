@@ -105,6 +105,19 @@ public class Order {
     @Column(name = "review_note", columnDefinition = "TEXT")
     private String reviewNote;
 
+    @Column(name = "tracking_number", length = 100)
+    private String trackingNumber;
+
+    @Column(name = "carrier", length = 50)
+    @Builder.Default
+    private String carrier = "DHL Express";
+
+    @Column(name = "shipped_at")
+    private Instant shippedAt;
+
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

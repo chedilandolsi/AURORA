@@ -74,11 +74,13 @@ public class OrderService {
         BigDecimal subtotal = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
-            Product product = productRepository.findById(itemRequest.getProductId())
+            // Pessimistic write lock during order initialization to guarantee atomic stock validation
+            Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product", "id", itemRequest.getProductId()));
 
             if (product.getStockQuantity() < itemRequest.getQuantity()) {
-                throw new BadRequestException("Insufficient stock for mask: " + product.getName() + " (Only " + product.getStockQuantity() + " remaining in atelier)");
+                throw new BadRequestException("Insufficient inventory for masterwork: " + product.getName()
+                        + " (Only " + product.getStockQuantity() + " remaining in atelier)");
             }
 
             BigDecimal unitPrice = "USD".equalsIgnoreCase(currency)
@@ -111,118 +113,70 @@ public class OrderService {
         order.setTotalAmount(subtotal.add(shippingCost));
 
         Order savedOrder = orderRepository.save(order);
-        log.info("Created pending Stripe order #{} for total {} {}", savedOrder.getOrderNumber(), savedOrder.getTotalAmount(), savedOrder.getCurrency());
+        log.info("Created pending checkout order #{} for total {} {}", savedOrder.getOrderNumber(), savedOrder.getTotalAmount(), savedOrder.getCurrency());
         return savedOrder;
     }
 
     @Transactional
-    public OrderResponse placeUnpaidOrder(CreateCheckoutSessionRequest request, UUID userId) {
-        if (request.getItems() == null || request.getItems().isEmpty()) {
-            throw new BadRequestException("Order must contain at least one mask.");
+    public void markOrderAsPaid(String sessionId, String paymentIntentId) {
+        Order order = orderRepository.findByStripeCheckoutSessionId(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order with Stripe session ID: " + sessionId + " not found"));
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            log.info("Order #{} is already marked as PAID", order.getOrderNumber());
+            return;
         }
 
-        String currency = "USD".equalsIgnoreCase(request.getCurrency()) ? "USD" : "EUR";
+        // Deduct inventory atomically with pessimistic write locks
+        for (OrderItem item : order.getItems()) {
+            if (item.getProductId() != null) {
+                Product product = productRepository.findByIdForUpdate(item.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + item.getProductId()));
 
-        User user = null;
-        if (userId != null) {
-            user = userRepository.findById(userId).orElse(null);
-        }
+                if (product.getStockQuantity() < item.getQuantity()) {
+                    throw new BadRequestException("Race condition: stock exhausted for " + product.getName());
+                }
 
-        String orderNumber = generateOrderNumber();
-
-        Order order = Order.builder()
-                .orderNumber(orderNumber)
-                .user(user)
-                .currency(currency)
-                .status(OrderStatus.PENDING_MANUAL_CONFIRMATION)
-                .paymentStatus(PaymentStatus.UNPAID)
-                .paymentMethod(PaymentMethod.MANUAL)
-                .customerEmail(request.getCustomerEmail().toLowerCase().trim())
-                .customerName(request.getCustomerName().trim())
-                .customerPhone(request.getCustomerPhone())
-                .shippingAddressLine1(request.getShippingAddressLine1())
-                .shippingAddressLine2(request.getShippingAddressLine2())
-                .shippingCity(request.getShippingCity())
-                .shippingState(request.getShippingState())
-                .shippingPostalCode(request.getShippingPostalCode())
-                .shippingCountry(request.getShippingCountry())
-                .notes(request.getNotes())
-                .subtotalAmount(BigDecimal.ZERO)
-                .shippingAmount(BigDecimal.ZERO)
-                .totalAmount(BigDecimal.ZERO)
-                .items(new ArrayList<>())
-                .build();
-
-        BigDecimal subtotal = BigDecimal.ZERO;
-
-        for (OrderItemRequest itemRequest : request.getItems()) {
-            // Pessimistic write lock to prevent race-condition overselling
-            Product product = productRepository.findByIdForUpdate(itemRequest.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product", "id", itemRequest.getProductId()));
-
-            if (product.getStockQuantity() < itemRequest.getQuantity()) {
-                throw new BadRequestException("Insufficient stock for mask: " + product.getName() + " (Only " + product.getStockQuantity() + " remaining in atelier)");
+                int remaining = product.getStockQuantity() - item.getQuantity();
+                product.setStockQuantity(remaining);
+                productRepository.save(product);
+                log.info("Deducted {} units of mask [{}]. Remaining in atelier: {}", item.getQuantity(), product.getName(), remaining);
             }
-
-            // Reserve/deduct inventory immediately
-            product.setStockQuantity(product.getStockQuantity() - itemRequest.getQuantity());
-            productRepository.save(product);
-
-            BigDecimal unitPrice = "USD".equalsIgnoreCase(currency)
-                    ? product.getDiscountedPriceUsd()
-                    : product.getDiscountedPriceEur();
-
-            BigDecimal itemTotal = unitPrice.multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-            subtotal = subtotal.add(itemTotal);
-
-            OrderItem orderItem = OrderItem.builder()
-                    .order(order)
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .productWoodType(product.getWoodType())
-                    .unitPrice(unitPrice)
-                    .quantity(itemRequest.getQuantity())
-                    .totalPrice(itemTotal)
-                    .build();
-
-            order.getItems().add(orderItem);
         }
 
-        BigDecimal shippingCost = subtotal.compareTo(new BigDecimal("200.00")) >= 0
-                ? BigDecimal.ZERO
-                : new BigDecimal("25.00");
-
-        order.setSubtotalAmount(subtotal);
-        order.setShippingAmount(shippingCost);
-        order.setTotalAmount(subtotal.add(shippingCost));
+        // Strict FSM state 1: PENDING_CONFIRMATION (Payment settled, awaiting admin manual review)
+        order.setStatus(OrderStatus.PENDING_CONFIRMATION);
+        order.setPaymentStatus(PaymentStatus.PAID);
+        order.setStripePaymentIntentId(paymentIntentId);
 
         Order savedOrder = orderRepository.save(order);
-        log.info("Placed manual unpaid order #{} for total {} {} with status {}",
-                savedOrder.getOrderNumber(), savedOrder.getTotalAmount(), savedOrder.getCurrency(), savedOrder.getStatus());
+        log.info("Successfully settled payment for order #{}. Transitioned to PENDING_CONFIRMATION", order.getOrderNumber());
 
-        if (userId != null) {
+        if (savedOrder.getUser() != null) {
             try {
-                cartService.clearCart(userId);
+                cartService.clearCart(savedOrder.getUser().getId());
             } catch (Exception e) {
-                log.warn("Could not clear user cart after unpaid checkout: {}", e.getMessage());
+                log.warn("Could not clear user cart after payment settlement: {}", e.getMessage());
             }
         }
 
         try {
             emailService.sendManualOrderReceivedEmail(savedOrder);
         } catch (Exception e) {
-            log.warn("Failed to dispatch order received email: {}", e.getMessage());
+            log.warn("Failed to dispatch payment receipt email: {}", e.getMessage());
         }
-
-        return mapToResponse(savedOrder);
     }
 
+    /**
+     * Strict FSM state 2: CONFIRMED
+     * Manually reviewed and approved by the admin in dashboard.
+     */
     @Transactional
-    public OrderResponse confirmManualOrder(UUID orderId, String adminEmail, String reviewNote) {
+    public OrderResponse confirmOrder(UUID orderId, String adminEmail, String reviewNote) {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        if (order.getStatus() != OrderStatus.PENDING_MANUAL_CONFIRMATION) {
+        if (order.getStatus() != OrderStatus.PENDING_CONFIRMATION) {
             throw new BadRequestException("Order #" + order.getOrderNumber() + " cannot be confirmed because it is in status: " + order.getStatus());
         }
 
@@ -243,16 +197,76 @@ public class OrderService {
         return mapToResponse(savedOrder);
     }
 
+    /**
+     * Strict FSM state 3: ON_THE_WAY
+     * Automatically triggered when admin inputs official DHL tracking number provided after shipping via Poste Rapide.
+     */
     @Transactional
-    public OrderResponse rejectManualOrder(UUID orderId, String adminEmail, String reviewNote) {
+    public OrderResponse shipOrder(UUID orderId, String trackingNumber, String carrier, String adminEmail) {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        if (order.getStatus() != OrderStatus.PENDING_MANUAL_CONFIRMATION) {
-            throw new BadRequestException("Order #" + order.getOrderNumber() + " cannot be rejected because it is in status: " + order.getStatus());
+        if (order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PENDING_CONFIRMATION) {
+            throw new BadRequestException("Order #" + order.getOrderNumber() + " must be CONFIRMED before shipping. Current status: " + order.getStatus());
         }
 
-        // Restore reserved stock back to atelier inventory
+        if (trackingNumber == null || trackingNumber.trim().isBlank()) {
+            throw new BadRequestException("Official DHL tracking number is required to dispatch order.");
+        }
+
+        order.setStatus(OrderStatus.ON_THE_WAY);
+        order.setTrackingNumber(trackingNumber.trim());
+        order.setCarrier(carrier != null && !carrier.isBlank() ? carrier.trim() : "DHL Express");
+        order.setShippedAt(Instant.now());
+        order.setReviewedBy(adminEmail != null ? adminEmail : order.getReviewedBy());
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Order #{} marked ON_THE_WAY with DHL tracking: {}", savedOrder.getOrderNumber(), savedOrder.getTrackingNumber());
+
+        try {
+            emailService.sendOrderShippedEmail(savedOrder);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch shipment notification email: {}", e.getMessage());
+        }
+
+        return mapToResponse(savedOrder);
+    }
+
+    /**
+     * Strict FSM state 4: DELIVERED
+     * Marked by admin once delivery is finalized.
+     */
+    @Transactional
+    public OrderResponse deliverOrder(UUID orderId, String adminEmail) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        if (order.getStatus() != OrderStatus.ON_THE_WAY) {
+            throw new BadRequestException("Only orders ON_THE_WAY can be marked as DELIVERED. Current status: " + order.getStatus());
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setDeliveredAt(Instant.now());
+
+        Order savedOrder = orderRepository.save(order);
+        log.info("Admin [{}] marked order #{} as DELIVERED", adminEmail, savedOrder.getOrderNumber());
+        return mapToResponse(savedOrder);
+    }
+
+    /**
+     * Strict FSM state 5: REJECTED
+     * Rejected by admin; restores reserved inventory safely.
+     */
+    @Transactional
+    public OrderResponse rejectOrder(UUID orderId, String adminEmail, String reviewNote) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+
+        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.REJECTED) {
+            throw new BadRequestException("Order #" + order.getOrderNumber() + " cannot be rejected from status: " + order.getStatus());
+        }
+
+        // Restore reserved stock back to atelier inventory with pessimistic locks
         for (OrderItem item : order.getItems()) {
             if (item.getProductId() != null) {
                 productRepository.findByIdForUpdate(item.getProductId()).ifPresent(product -> {
@@ -278,41 +292,6 @@ public class OrderService {
         }
 
         return mapToResponse(savedOrder);
-    }
-
-    @Transactional
-    public void markOrderAsPaid(String sessionId, String paymentIntentId) {
-        Order order = orderRepository.findByStripeCheckoutSessionId(sessionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order with Stripe session ID: " + sessionId + " not found"));
-
-        if (order.getPaymentStatus() == PaymentStatus.PAID) {
-            log.info("Order #{} is already marked as PAID", order.getOrderNumber());
-            return;
-        }
-
-        order.setStatus(OrderStatus.PAID);
-        order.setPaymentStatus(PaymentStatus.PAID);
-        order.setStripePaymentIntentId(paymentIntentId);
-
-        // Deduct inventory quantities safely
-        for (OrderItem item : order.getItems()) {
-            if (item.getProductId() != null) {
-                productRepository.findByIdForUpdate(item.getProductId()).ifPresent(product -> {
-                    int remaining = Math.max(0, product.getStockQuantity() - item.getQuantity());
-                    product.setStockQuantity(remaining);
-                    productRepository.save(product);
-                });
-            }
-        }
-
-        Order savedOrder = orderRepository.save(order);
-        log.info("Successfully marked order #{} as PAID with PaymentIntent: {}", order.getOrderNumber(), paymentIntentId);
-
-        try {
-            emailService.sendOrderConfirmationEmail(savedOrder);
-        } catch (Exception e) {
-            log.warn("Failed to dispatch Stripe payment confirmation email: {}", e.getMessage());
-        }
     }
 
     @Transactional(readOnly = true)
@@ -390,6 +369,10 @@ public class OrderService {
                 .reviewedAt(order.getReviewedAt())
                 .reviewedBy(order.getReviewedBy())
                 .reviewNote(order.getReviewNote())
+                .trackingNumber(order.getTrackingNumber())
+                .carrier(order.getCarrier())
+                .shippedAt(order.getShippedAt())
+                .deliveredAt(order.getDeliveredAt())
                 .createdAt(order.getCreatedAt())
                 .items(itemResponses)
                 .build();

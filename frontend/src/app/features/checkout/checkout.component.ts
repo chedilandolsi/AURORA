@@ -162,53 +162,30 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                 </div>
               </div>
 
-              <!-- Payment Method Selection -->
+              <!-- Payment Gateway Assurance -->
               <div class="bg-aurora-card border border-aurora-border rounded-2xl p-6 space-y-4">
                 <div class="flex items-center gap-2 pb-3 border-b border-aurora-border/60">
                   <div class="w-6 h-6 rounded-full bg-aurora-darker text-aurora-gold flex items-center justify-center text-xs font-bold">3</div>
-                  <h3 class="font-serif text-base font-semibold text-white">Select Checkout Method</h3>
+                  <h3 class="font-serif text-base font-semibold text-white">Payment &amp; Atelier Guarantee</h3>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <!-- Option 1: Stripe Card -->
-                  <div 
-                    (click)="paymentMethod = 'STRIPE'"
-                    class="cursor-pointer p-4 rounded-xl border transition-all text-left relative"
-                    [ngClass]="paymentMethod === 'STRIPE' ? 'border-aurora-gold bg-aurora-gold/10' : 'border-aurora-border bg-aurora-darker'">
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="flex items-center gap-2">
-                        <input type="radio" [checked]="paymentMethod === 'STRIPE'" class="accent-aurora-gold" />
-                        <span class="font-serif text-xs font-bold text-white">Encrypted Card</span>
-                      </div>
-                      <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">Stripe Test/Live</span>
+                <div class="p-4 rounded-xl border border-aurora-gold/40 bg-aurora-gold/5 text-left relative">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span class="font-serif text-xs font-bold text-white">Stripe Express Encrypted Checkout</span>
                     </div>
-                    <p class="text-[11px] text-aurora-sand/70 leading-relaxed">
-                      Instant checkout via Stripe PCI-DSS secure gateway. Cards, Apple Pay, Google Pay.
-                    </p>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">PCI-DSS Certified</span>
                   </div>
-
-                  <!-- Option 2: Order Without Paying (Manual Approval) -->
-                  <div 
-                    (click)="paymentMethod = 'MANUAL'"
-                    class="cursor-pointer p-4 rounded-xl border transition-all text-left relative"
-                    [ngClass]="paymentMethod === 'MANUAL' ? 'border-aurora-gold bg-aurora-gold/10' : 'border-aurora-border bg-aurora-darker'">
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="flex items-center gap-2">
-                        <input type="radio" [checked]="paymentMethod === 'MANUAL'" class="accent-aurora-gold" />
-                        <span class="font-serif text-xs font-bold text-white">Order Without Paying</span>
-                      </div>
-                      <span class="text-[10px] px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-500/30">Manual Approval</span>
-                    </div>
-                    <p class="text-[11px] text-aurora-sand/70 leading-relaxed">
-                      Submit order directly to the atelier without card entry. Reserved stock &amp; artisan review.
-                    </p>
-                  </div>
+                  <p class="text-[11px] text-aurora-sand/70 leading-relaxed">
+                    Credit / Debit Cards, Apple Pay, Google Pay. Funds are held in escrow under order status <span class="text-amber-400 font-mono">PENDING_CONFIRMATION</span> until our atelier inspects the piece and issues your DHL Express tracking dossier.
+                  </p>
                 </div>
 
                 <div class="flex items-center gap-3 pt-2 text-xs text-aurora-sand/50">
                   <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">🔒 256-bit TLS</span>
                   <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">Artisanal Direct</span>
-                  <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">DHL Express Delivery</span>
+                  <span class="px-2 py-1 bg-aurora-darker rounded border border-aurora-border">DHL Express Insured</span>
                 </div>
               </div>
 
@@ -223,12 +200,10 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                 [disabled]="submitting"
                 class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-aurora-gold via-amber-400 to-aurora-goldLight text-aurora-darker font-bold text-xs uppercase tracking-[0.2em] hover:brightness-110 shadow-xl shadow-aurora-gold/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                 <ng-container *ngIf="!submitting">
-                  <span *ngIf="paymentMethod === 'STRIPE'">Pay {{ cartService.formattedTotal() }} via Stripe</span>
-                  <span *ngIf="paymentMethod === 'MANUAL'">Submit Order for Approval (No Payment Required)</span>
+                  <span>Pay {{ cartService.formattedTotal() }} via Stripe</span>
                 </ng-container>
                 <ng-container *ngIf="submitting">
-                  <span *ngIf="paymentMethod === 'STRIPE'">Connecting to Secure Stripe Gateway...</span>
-                  <span *ngIf="paymentMethod === 'MANUAL'">Reserving Masks with Master Artisans...</span>
+                  <span>Connecting to Secure Stripe Gateway...</span>
                   <div class="w-4 h-4 border-2 border-aurora-darker border-t-transparent rounded-full animate-spin"></div>
                 </ng-container>
               </button>
@@ -306,10 +281,8 @@ export class CheckoutComponent {
   readonly cartService = inject(CartService);
   readonly currencyService = inject(CurrencyService);
   private readonly stripeService = inject(StripeService);
-  private readonly orderService = inject(OrderService);
   private readonly authService = inject(AuthService);
 
-  paymentMethod: 'STRIPE' | 'MANUAL' = 'STRIPE';
   submitting = false;
   errorMessage = '';
 
@@ -360,31 +333,15 @@ export class CheckoutComponent {
       notes: formVal.notes || undefined
     };
 
-    if (this.paymentMethod === 'MANUAL') {
-      this.orderService.placeUnpaidOrder(request).subscribe({
-        next: (res) => {
-          this.cartService.clearCart();
-          this.router.navigate(['/checkout/success'], {
-            queryParams: { order_number: res.data.orderNumber }
-          });
-        },
-        error: (err) => {
-          this.submitting = false;
-          this.errorMessage = err.error?.message || 'Failed to place manual order reservation. Please try again.';
-        }
-      });
-    } else {
-      this.stripeService.createCheckoutSession(request).subscribe({
-        next: (res) => {
-          // Clear cart and redirect to Stripe hosted checkout page
-          this.cartService.clearCart();
-          this.stripeService.redirectToCheckout(res.data.checkoutUrl);
-        },
-        error: (err) => {
-          this.submitting = false;
-          this.errorMessage = err.error?.message || 'Failed to initiate secure Stripe checkout. Please try again.';
-        }
-      });
-    }
+    this.stripeService.createCheckoutSession(request).subscribe({
+      next: (res) => {
+        this.cartService.clearCart();
+        this.stripeService.redirectToCheckout(res.data.checkoutUrl);
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.errorMessage = err.error?.message || 'Failed to initiate secure Stripe checkout. Please try again.';
+      }
+    });
   }
 }

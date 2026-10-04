@@ -1,17 +1,18 @@
 package com.aurora.model.entity;
 
 public enum OrderStatus {
-    /** Stripe checkout created, awaiting payment confirmation. */
+    /** Checkout session created, awaiting payment settlement. */
     PENDING,
-    PAID,
-    /** Order placed without online payment; awaiting admin review. Stock is reserved. */
-    PENDING_MANUAL_CONFIRMATION,
-    /** Manual order approved by an admin and ready for fulfillment. */
+    /** Payment settled by customer; awaiting admin confirmation. */
+    PENDING_CONFIRMATION,
+    /** Order confirmed and in preparation by atelier master. */
     CONFIRMED,
-    /** Manual order declined by an admin. Reserved stock has been restored. */
-    REJECTED,
-    PROCESSING,
-    SHIPPED,
+    /** Handed over to DHL Express with active tracking number. */
+    ON_THE_WAY,
+    /** Successfully delivered to collector address. */
     DELIVERED,
+    /** Rejected by atelier admin; stock returned to catalog. */
+    REJECTED,
+    /** Cancelled. */
     CANCELLED
 }

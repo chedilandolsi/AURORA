@@ -56,6 +56,17 @@ public class EmailService {
     }
 
     @Async
+    public void sendOrderShippedEmail(Order order) {
+        if (order.getCustomerEmail() == null || order.getCustomerEmail().isBlank()) {
+            return;
+        }
+
+        String subject = "AURORA Atelier — Your Mask Has Shipped via DHL Express [#" + order.getOrderNumber() + "]";
+        String body = buildShippedHtml(order);
+        sendHtmlEmail(order.getCustomerEmail(), subject, body);
+    }
+
+    @Async
     public void sendOrderRejectionEmail(Order order, String reason) {
         if (order.getCustomerEmail() == null || order.getCustomerEmail().isBlank()) {
             return;
@@ -187,6 +198,42 @@ public class EmailService {
                     ? "<div style='background:#1f1717;border-left:3px solid #ef4444;padding:14px 18px;margin:20px 0;border-radius:0 8px 8px 0;font-size:13px;color:#e8c6c6;'><strong>Artisan Note:</strong> " + escapeHtml(reason) + "</div>"
                     : "")
                 + "      <p style='color:#bbb0a0;line-height:1.6;'>No charges were incurred, and any reserved atelier items have been released back to our catalog. If you have questions or wish to explore alternative bespoke commissions, please feel free to reply directly to this message.</p>"
+                + "    </div>"
+                + "    <div style='background:#100f0d;padding:20px;text-align:center;font-size:11px;color:#6b6255;border-top:1px solid #201c16;'>"
+                + "      AURORA — High Artisanal Tunisian Wooden Masks • Handcrafted in Tunisia • Worldwide DHL Express Delivery"
+                + "    </div>"
+                + "  </div>"
+                + "</body>"
+                + "</html>";
+    }
+
+    private String buildShippedHtml(Order order) {
+        return "<!DOCTYPE html>"
+                + "<html>"
+                + "<head><meta charset='UTF-8'></head>"
+                + "<body style='margin:0;padding:0;background-color:#0d0c0a;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;color:#f3efe6;'>"
+                + "  <div style='max-width:640px;margin:30px auto;background:#161513;border:1px solid #2e281f;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);'>"
+                + "    <div style='background:linear-gradient(135deg, #1c1813 0%, #2b2318 100%);padding:36px 30px;border-bottom:1px solid #3d3220;text-align:center;'>"
+                + "      <div style='font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;margin-bottom:8px;'>Atelier Artisanal Tunisien</div>"
+                + "      <h1 style='margin:0;font-size:26px;font-weight:300;letter-spacing:2px;color:#ffffff;text-transform:uppercase;'>A U R O R A</h1>"
+                + "      <div style='font-size:12px;color:#a89b88;margin-top:6px;'>Sidi Bou Saïd • Carthage • Tunis</div>"
+                + "    </div>"
+                + "    <div style='padding:32px 30px;'>"
+                + "      <div style='display:inline-block;padding:6px 14px;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.3);border-radius:20px;color:#d4af37;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;'>✈ Dispatched via DHL Express</div>"
+                + "      <h2 style='font-size:22px;font-weight:400;color:#f0e6d2;margin-top:0;'>Your Mask Collection is On the Way</h2>"
+                + "      <p style='color:#bbb0a0;line-height:1.6;'>Cher/Chère " + escapeHtml(order.getCustomerName()) + ",</p>"
+                + "      <p style='color:#bbb0a0;line-height:1.6;'>Great news from the atelier: your order <strong>#" + escapeHtml(order.getOrderNumber()) + "</strong> has been handed over to DHL Express with priority diplomatic handling.</p>"
+                + "      <div style='background:#1f1c17;border:1px solid #3d3220;padding:20px;margin:24px 0;border-radius:8px;text-align:center;'>"
+                + "        <div style='color:#8a7f70;font-size:11px;text-transform:uppercase;letter-spacing:2px;'>DHL Express Waybill / Tracking Reference</div>"
+                + "        <div style='color:#ffffff;font-size:20px;font-family:monospace;font-weight:bold;letter-spacing:3px;margin:8px 0;'>" + escapeHtml(order.getTrackingNumber()) + "</div>"
+                + "        <p style='color:#a89b88;font-size:12px;margin:0;'>Live tracking timeline is now active in your Aurora account.</p>"
+                + "      </div>"
+                + buildItemsTableHtml(order)
+                + "      <div style='margin-top:28px;padding-top:20px;border-top:1px solid #2a241b;color:#8a7f70;font-size:12px;line-height:1.6;'>"
+                + "        <strong>Courier Destination:</strong><br/>"
+                + escapeHtml(order.getShippingAddressLine1()) + "<br/>"
+                + escapeHtml(order.getShippingCity()) + ", " + escapeHtml(order.getShippingPostalCode()) + " (" + escapeHtml(order.getShippingCountry()) + ")<br/>"
+                + "      </div>"
                 + "    </div>"
                 + "    <div style='background:#100f0d;padding:20px;text-align:center;font-size:11px;color:#6b6255;border-top:1px solid #201c16;'>"
                 + "      AURORA — High Artisanal Tunisian Wooden Masks • Handcrafted in Tunisia • Worldwide DHL Express Delivery"

@@ -70,8 +70,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/payments/create-checkout-session").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/webhook").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/payments/session/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/orders/place-unpaid").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/{orderNumber}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/orders/*/tracking").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/orders/track/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ai/quota").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/analytics/visit").permitAll()
                         // Admin-only endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

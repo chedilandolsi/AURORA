@@ -2,6 +2,7 @@ package com.aurora.controller;
 
 import com.aurora.dto.ApiResponse;
 import com.aurora.dto.admin.ReviewOrderRequest;
+import com.aurora.dto.admin.ShipOrderRequest;
 import com.aurora.dto.checkout.OrderResponse;
 import com.aurora.model.entity.OrderStatus;
 import com.aurora.security.UserPrincipal;
@@ -24,7 +25,7 @@ import java.util.UUID;
 @RequestMapping("/api/admin/orders")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@Tag(name = "Admin - Order Management", description = "Endpoints for managing, reviewing, confirming, and rejecting artisanal customer orders")
+@Tag(name = "Admin - Order Management & Strict FSM", description = "Endpoints for managing strict order lifecycle (Confirm, Ship via DHL, Deliver, Reject)")
 public class AdminOrderController {
 
     private final OrderService orderService;
@@ -45,7 +46,7 @@ public class AdminOrderController {
     }
 
     @PostMapping("/{id}/confirm")
-    @Operation(summary = "Confirm an unpaid/manual order, trigger artisanal preparation, and dispatch confirmation email")
+    @Operation(summary = "Step 2: Confirm order after manual admin review (PENDING_CONFIRMATION -> CONFIRMED)")
     public ResponseEntity<ApiResponse<OrderResponse>> confirmOrder(
             @PathVariable UUID id,
             @Valid @RequestBody(required = false) ReviewOrderRequest request,
@@ -54,12 +55,37 @@ public class AdminOrderController {
         String note = request != null ? request.getReviewNote() : null;
         log.info("Admin [{}] confirming order {}", adminEmail, id);
 
-        OrderResponse confirmed = orderService.confirmManualOrder(id, adminEmail, note);
-        return ResponseEntity.ok(ApiResponse.ok("Order confirmed successfully and notification email dispatched.", confirmed));
+        OrderResponse confirmed = orderService.confirmOrder(id, adminEmail, note);
+        return ResponseEntity.ok(ApiResponse.ok("Order confirmed and placed into atelier preparation queue.", confirmed));
+    }
+
+    @PostMapping("/{id}/ship")
+    @Operation(summary = "Step 3: Dispatch order via DHL Express / Poste Rapide with official tracking number (CONFIRMED -> ON_THE_WAY)")
+    public ResponseEntity<ApiResponse<OrderResponse>> shipOrder(
+            @PathVariable UUID id,
+            @Valid @RequestBody ShipOrderRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        String adminEmail = userPrincipal != null ? userPrincipal.getEmail() : "Admin";
+        log.info("Admin [{}] shipping order {} with DHL tracking {}", adminEmail, id, request.getTrackingNumber());
+
+        OrderResponse shipped = orderService.shipOrder(id, request.getTrackingNumber(), request.getCarrier(), adminEmail);
+        return ResponseEntity.ok(ApiResponse.ok("Order marked as ON_THE_WAY with DHL tracking number. Customer notified via email.", shipped));
+    }
+
+    @PostMapping("/{id}/deliver")
+    @Operation(summary = "Step 4: Mark order as successfully delivered to collector (ON_THE_WAY -> DELIVERED)")
+    public ResponseEntity<ApiResponse<OrderResponse>> deliverOrder(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        String adminEmail = userPrincipal != null ? userPrincipal.getEmail() : "Admin";
+        log.info("Admin [{}] marking order {} as DELIVERED", adminEmail, id);
+
+        OrderResponse delivered = orderService.deliverOrder(id, adminEmail);
+        return ResponseEntity.ok(ApiResponse.ok("Order successfully marked as DELIVERED.", delivered));
     }
 
     @PostMapping("/{id}/reject")
-    @Operation(summary = "Reject an unpaid/manual order, restore reserved mask inventory, and dispatch rejection email")
+    @Operation(summary = "Step 5: Reject order, restore reserved mask inventory, and dispatch update email")
     public ResponseEntity<ApiResponse<OrderResponse>> rejectOrder(
             @PathVariable UUID id,
             @Valid @RequestBody(required = false) ReviewOrderRequest request,
@@ -68,7 +94,7 @@ public class AdminOrderController {
         String note = request != null ? request.getReviewNote() : null;
         log.info("Admin [{}] rejecting order {}", adminEmail, id);
 
-        OrderResponse rejected = orderService.rejectManualOrder(id, adminEmail, note);
-        return ResponseEntity.ok(ApiResponse.ok("Order rejected, inventory restored, and notification dispatched.", rejected));
+        OrderResponse rejected = orderService.rejectOrder(id, adminEmail, note);
+        return ResponseEntity.ok(ApiResponse.ok("Order rejected and mask inventory restored to catalog.", rejected));
     }
 }
