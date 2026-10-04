@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.aurora.repository.CartItemRepository;
+import com.aurora.repository.CartRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @Slf4j
 @Component
 @org.springframework.core.annotation.Order(20)
@@ -26,11 +30,17 @@ public class OrderDataSeeder implements CommandLineRunner {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
 
     @Override
     @Transactional
     public void run(String... args) {
         log.info("Checking order lifecycle seed data across all 5 FSM states...");
+
+        // 1. Seed dedicated customer test account (test.customer@aurora.tn) with empty cart
+        seedTestCustomerAccount();
 
         List<Product> products = productRepository.findAll();
         if (products.isEmpty()) {
@@ -377,5 +387,36 @@ public class OrderDataSeeder implements CommandLineRunner {
 
         orderRepository.save(order);
         log.info("Seeded order [{}] with status [{}] for customer [{}]", orderNumber, status, customerName);
+    }
+
+    private void seedTestCustomerAccount() {
+        String testEmail = "test.customer@aurora.tn";
+        User customer = userRepository.findByEmail(testEmail).orElse(null);
+        if (customer == null) {
+            customer = User.builder()
+                    .email(testEmail)
+                    .passwordHash(passwordEncoder.encode("AuroraTest2026!"))
+                    .firstName("Test")
+                    .lastName("Customer")
+                    .authProvider(AuthProvider.LOCAL)
+                    .role(Role.ROLE_USER)
+                    .isActive(true)
+                    .build();
+            customer = userRepository.save(customer);
+            log.info("Seeded dedicated customer test account: {}", testEmail);
+        } else {
+            customer.setPasswordHash(passwordEncoder.encode("AuroraTest2026!"));
+            customer.setRole(Role.ROLE_USER);
+            customer.setIsActive(true);
+            customer = userRepository.save(customer);
+            log.info("Verified & updated dedicated customer test account: {}", testEmail);
+        }
+
+        // Guarantee clean, empty cart by default for complete test flow
+        Optional<Cart> cartOpt = cartRepository.findByUserId(customer.getId());
+        if (cartOpt.isPresent()) {
+            cartItemRepository.deleteByCartId(cartOpt.get().getId());
+            log.info("Cleared cart for {} to guarantee clean initial test state", testEmail);
+        }
     }
 }

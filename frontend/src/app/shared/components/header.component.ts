@@ -36,13 +36,13 @@ import { CurrencyService } from '../../core/services/currency.service';
 
           <!-- Brand Logo -->
           <div class="flex-shrink-0 flex items-center gap-3">
-            <a routerLink="/" class="group flex items-center gap-2.5">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-aurora-gold via-aurora-terracotta to-aurora-darker flex items-center justify-center shadow-lg shadow-aurora-gold/10 group-hover:scale-105 transition-transform duration-300">
-                <span class="font-serif font-black text-xl text-white tracking-widest">A</span>
+            <a routerLink="/" class="group flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-aurora-card/80 border border-aurora-gold/40 flex items-center justify-center p-1.5 shadow-lg shadow-aurora-gold/15 group-hover:border-aurora-gold group-hover:scale-105 transition-all duration-300">
+                <img src="assets/logo-mark.svg" alt="Aurora Atelier Artisanal" class="w-full h-full object-contain" />
               </div>
               <div class="flex flex-col">
                 <span class="font-serif text-2xl font-bold tracking-[0.25em] text-white group-hover:text-aurora-gold transition-colors">AURORA</span>
-                <span class="text-[9px] uppercase tracking-[0.3em] text-aurora-gold/90 -mt-1 font-sans">Artisanal Atelier</span>
+                <span class="text-[9px] uppercase tracking-[0.3em] text-aurora-gold/90 -mt-1 font-sans font-medium">ATELIER ARTISANAL</span>
               </div>
             </a>
           </div>

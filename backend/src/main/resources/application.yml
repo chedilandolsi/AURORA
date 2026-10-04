@@ -89,9 +89,9 @@ app:
     brand-name: "AURORA Atelier"
 
 stripe:
-  api-key: ${STRIPE_SECRET_KEY:${STRIPE_API_KEY:sk_test_placeholder_key}}
-  publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_placeholder_key}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_placeholder_secret}
+  api-key: ${STRIPE_SECRET_KEY:sk_test_51Svihe2NdpBINd1kG2gUa8D918374928174918237912837192837192837192837192837192837192837192837192837}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_51Svihe2NdpBINd1ktWM9fklCXX5QgvBdQbSXM8MMNDhxlNSh8yPaSejOa9A4XZhizTVzOgQcakwcoH7SlDi3rmcO00wl78iV37}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_test_secret_sandbox_aurora}
   currency:
     default: eur
     supported: eur,usd

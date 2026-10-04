@@ -65,11 +65,14 @@ import { RouterLink } from '@angular/router';
         <div class="grid grid-cols-1 md:grid-cols-5 gap-10 py-12">
           
           <div class="md:col-span-2 space-y-4">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-md bg-gradient-to-br from-aurora-gold to-aurora-darker flex items-center justify-center">
-                <span class="font-serif font-bold text-white text-base">A</span>
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-aurora-card border border-aurora-gold/30 flex items-center justify-center p-1.5 shadow-md">
+                <img src="assets/logo-mark.svg" alt="Aurora Logo" class="w-full h-full object-contain" />
               </div>
-              <span class="font-serif text-xl font-bold tracking-[0.2em] text-white">AURORA</span>
+              <div class="flex flex-col">
+                <span class="font-serif text-xl font-bold tracking-[0.2em] text-white">AURORA</span>
+                <span class="text-[8px] uppercase tracking-[0.25em] text-aurora-gold/80 -mt-0.5">ATELIER ARTISANAL</span>
+              </div>
             </div>
             <p class="text-xs text-aurora-sand/70 leading-relaxed max-w-sm">
               Aurora preserves the sacred carving traditions of North Africa. We bridge generational master woodcarvers with contemporary architecture collectors across the Mediterranean and North America.

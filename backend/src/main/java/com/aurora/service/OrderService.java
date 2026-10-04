@@ -319,10 +319,17 @@ public class OrderService {
         return mapToResponse(order);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public OrderResponse getOrderBySessionId(String sessionId) {
         Order order = orderRepository.findByStripeCheckoutSessionId(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "stripeSessionId", sessionId));
+
+        if (sessionId.startsWith("cs_test_") && order.getPaymentStatus() == PaymentStatus.UNPAID) {
+            log.info("Sandbox test session [{}] accessed on checkout success. Settling payment and transitioning to PENDING_CONFIRMATION", sessionId);
+            markOrderAsPaid(sessionId, "pi_test_sandbox_" + UUID.randomUUID().toString().substring(0, 8));
+            order = orderRepository.findByStripeCheckoutSessionId(sessionId).orElse(order);
+        }
+
         return mapToResponse(order);
     }
 

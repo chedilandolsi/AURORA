@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 650 180" fill="none">
+  <!-- Eye of Horus Icon Mark Left -->
+  <g transform="translate(10, 5) scale(0.55)" stroke="#C5A059" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top Eyebrow -->
+    <path d="M 80 80 C 145 47 255 47 320 80" stroke-width="14" />
+    
+    <!-- Upper Eyelid -->
+    <path d="M 80 113 C 145 71 255 71 320 113" stroke-width="13" />
+    
+    <!-- Lower Eyelid -->
+    <path d="M 90 117 C 145 163 255 163 310 117" stroke-width="13" />
+    
+    <!-- Solid Pupil -->
+    <circle cx="200" cy="113" r="30" fill="#C5A059" stroke="none" />
+    
+    <!-- Left Sweeping Cheek Line -->
+    <path d="M 95 123 C 140 185 210 235 315 215" stroke-width="14" />
+    
+    <!-- Right Spiral Falcon Coil -->
+    <path d="M 262 137 C 272 170 298 177 298 203 C 298 237 252 247 242 213 C 234 189 264 171 282 187 C 292 195 290 210 280 213 C 270 215 265 205 270 199" stroke-width="13" />
+  </g>
+  
+  <!-- Aurora Typography Right -->
+  <text x="240" y="95" font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="62" font-weight="600" fill="#C5A059" letter-spacing="3">AURORA</text>
+  <text x="244" y="132" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-size="16" font-weight="600" fill="#C5A059" letter-spacing="7">ATELIER ARTISANAL</text>
+</svg>

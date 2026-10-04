@@ -102,6 +102,24 @@ public class EmailService {
         }
     }
 
+    private String buildEmailHeaderHtml() {
+        return "    <div style='background:linear-gradient(135deg, #1c1813 0%, #2b2318 100%);padding:36px 30px;border-bottom:1px solid #3d3220;text-align:center;'>"
+                + "      <div style='margin-bottom:10px;'>"
+                + "        <svg width='52' height='40' viewBox='0 0 400 320' fill='none' stroke='#C5A059' stroke-linecap='round' stroke-linejoin='round' style='display:inline-block;vertical-align:middle;'>"
+                + "          <path d='M 80 80 C 145 47 255 47 320 80' stroke-width='16' />"
+                + "          <path d='M 80 113 C 145 71 255 71 320 113' stroke-width='15' />"
+                + "          <path d='M 90 117 C 145 163 255 163 310 117' stroke-width='15' />"
+                + "          <circle cx='200' cy='113' r='32' fill='#C5A059' stroke='none' />"
+                + "          <path d='M 95 123 C 140 185 210 235 315 215' stroke-width='16' />"
+                + "          <path d='M 262 137 C 272 170 298 177 298 203 C 298 237 252 247 242 213 C 234 189 264 171 282 187 C 292 195 290 210 280 213 C 270 215 265 205 270 199' stroke-width='15' />"
+                + "        </svg>"
+                + "      </div>"
+                + "      <h1 style='margin:0;font-size:26px;font-family:Cinzel,Georgia,serif;font-weight:600;letter-spacing:4px;color:#ffffff;text-transform:uppercase;'>A U R O R A</h1>"
+                + "      <div style='font-size:11px;letter-spacing:5px;text-transform:uppercase;color:#d4af37;margin-top:6px;font-weight:600;'>Atelier Artisanal</div>"
+                + "      <div style='font-size:11px;color:#a89b88;margin-top:4px;'>Sidi Bou Saïd • Carthage • Kairouan</div>"
+                + "    </div>";
+    }
+
     private String buildReceivedHtml(Order order) {
         String formattedDate = DateTimeFormatter.ofPattern("MMMM dd, yyyy")
                 .withZone(ZoneId.systemDefault())
@@ -112,11 +130,7 @@ public class EmailService {
                 + "<head><meta charset='UTF-8'></head>"
                 + "<body style='margin:0;padding:0;background-color:#0d0c0a;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;color:#f3efe6;'>"
                 + "  <div style='max-width:640px;margin:30px auto;background:#161513;border:1px solid #2e281f;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);'>"
-                + "    <div style='background:linear-gradient(135deg, #1c1813 0%, #2b2318 100%);padding:36px 30px;border-bottom:1px solid #3d3220;text-align:center;'>"
-                + "      <div style='font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;margin-bottom:8px;'>Atelier Artisanal Tunisien</div>"
-                + "      <h1 style='margin:0;font-size:26px;font-weight:300;letter-spacing:2px;color:#ffffff;text-transform:uppercase;'>A U R O R A</h1>"
-                + "      <div style='font-size:12px;color:#a89b88;margin-top:6px;'>Sidi Bou Saïd • Carthage • Tunis</div>"
-                + "    </div>"
+                + buildEmailHeaderHtml()
                 + "    <div style='padding:32px 30px;'>"
                 + "      <h2 style='font-size:20px;font-weight:400;color:#f0e6d2;margin-top:0;'>Order Reservation Received</h2>"
                 + "      <p style='color:#bbb0a0;line-height:1.6;'>Dear " + escapeHtml(order.getCustomerName()) + ",</p>"
@@ -150,11 +164,7 @@ public class EmailService {
                 + "<head><meta charset='UTF-8'></head>"
                 + "<body style='margin:0;padding:0;background-color:#0d0c0a;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;color:#f3efe6;'>"
                 + "  <div style='max-width:640px;margin:30px auto;background:#161513;border:1px solid #2e281f;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);'>"
-                + "    <div style='background:linear-gradient(135deg, #1c1813 0%, #2b2318 100%);padding:36px 30px;border-bottom:1px solid #3d3220;text-align:center;'>"
-                + "      <div style='font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;margin-bottom:8px;'>Atelier Artisanal Tunisien</div>"
-                + "      <h1 style='margin:0;font-size:26px;font-weight:300;letter-spacing:2px;color:#ffffff;text-transform:uppercase;'>A U R O R A</h1>"
-                + "      <div style='font-size:12px;color:#a89b88;margin-top:6px;'>Sidi Bou Saïd • Carthage • Tunis</div>"
-                + "    </div>"
+                + buildEmailHeaderHtml()
                 + "    <div style='padding:32px 30px;'>"
                 + "      <div style='display:inline-block;padding:6px 14px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:20px;color:#4ade80;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;'>✓ Order Confirmed</div>"
                 + "      <h2 style='font-size:22px;font-weight:400;color:#f0e6d2;margin-top:0;'>Your Mask Collection is Being Prepared</h2>"
@@ -184,11 +194,7 @@ public class EmailService {
                 + "<head><meta charset='UTF-8'></head>"
                 + "<body style='margin:0;padding:0;background-color:#0d0c0a;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;color:#f3efe6;'>"
                 + "  <div style='max-width:640px;margin:30px auto;background:#161513;border:1px solid #2e281f;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);'>"
-                + "    <div style='background:linear-gradient(135deg, #1c1813 0%, #2b2318 100%);padding:36px 30px;border-bottom:1px solid #3d3220;text-align:center;'>"
-                + "      <div style='font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;margin-bottom:8px;'>Atelier Artisanal Tunisien</div>"
-                + "      <h1 style='margin:0;font-size:26px;font-weight:300;letter-spacing:2px;color:#ffffff;text-transform:uppercase;'>A U R O R A</h1>"
-                + "      <div style='font-size:12px;color:#a89b88;margin-top:6px;'>Sidi Bou Saïd • Carthage • Tunis</div>"
-                + "    </div>"
+                + buildEmailHeaderHtml()
                 + "    <div style='padding:32px 30px;'>"
                 + "      <div style='display:inline-block;padding:6px 14px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:20px;color:#ef4444;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;'>Order Status Update</div>"
                 + "      <h2 style='font-size:22px;font-weight:400;color:#f0e6d2;margin-top:0;'>Regarding Your Order #" + escapeHtml(order.getOrderNumber()) + "</h2>"
@@ -213,11 +219,7 @@ public class EmailService {
                 + "<head><meta charset='UTF-8'></head>"
                 + "<body style='margin:0;padding:0;background-color:#0d0c0a;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif;color:#f3efe6;'>"
                 + "  <div style='max-width:640px;margin:30px auto;background:#161513;border:1px solid #2e281f;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.6);'>"
-                + "    <div style='background:linear-gradient(135deg, #1c1813 0%, #2b2318 100%);padding:36px 30px;border-bottom:1px solid #3d3220;text-align:center;'>"
-                + "      <div style='font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#d4af37;margin-bottom:8px;'>Atelier Artisanal Tunisien</div>"
-                + "      <h1 style='margin:0;font-size:26px;font-weight:300;letter-spacing:2px;color:#ffffff;text-transform:uppercase;'>A U R O R A</h1>"
-                + "      <div style='font-size:12px;color:#a89b88;margin-top:6px;'>Sidi Bou Saïd • Carthage • Tunis</div>"
-                + "    </div>"
+                + buildEmailHeaderHtml()
                 + "    <div style='padding:32px 30px;'>"
                 + "      <div style='display:inline-block;padding:6px 14px;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.3);border-radius:20px;color:#d4af37;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;'>✈ Dispatched via DHL Express</div>"
                 + "      <h2 style='font-size:22px;font-weight:400;color:#f0e6d2;margin-top:0;'>Your Mask Collection is On the Way</h2>"

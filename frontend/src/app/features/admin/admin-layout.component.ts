@@ -15,13 +15,13 @@ import { AuthService } from '../../core/services/auth.service';
         <div>
           <!-- Logo & Admin Badge -->
           <div class="p-6 border-b border-aurora-border/60">
-            <a routerLink="/" class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-aurora-gold to-aurora-terracotta flex items-center justify-center">
-                <span class="font-serif font-bold text-white text-base">A</span>
+            <a routerLink="/" class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-aurora-card border border-aurora-gold/40 flex items-center justify-center p-1.5 shadow-md">
+                <img src="assets/logo-mark.svg" alt="Aurora Logo" class="w-full h-full object-contain" />
               </div>
               <div>
                 <span class="font-serif text-lg font-bold tracking-widest text-white">AURORA</span>
-                <span class="block text-[9px] uppercase tracking-widest text-aurora-gold font-sans -mt-1">Atelier Director</span>
+                <span class="block text-[8px] uppercase tracking-widest text-aurora-gold font-sans -mt-0.5">Atelier Director</span>
               </div>
             </a>
           </div>

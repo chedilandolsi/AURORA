@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="20" fill="#0d0c0a"/>
+  <g transform="translate(10, 8) scale(0.2)" stroke="#C5A059" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top Eyebrow -->
+    <path d="M 80 80 C 145 47 255 47 320 80" stroke-width="22" />
+    
+    <!-- Upper Eyelid -->
+    <path d="M 80 113 C 145 71 255 71 320 113" stroke-width="20" />
+    
+    <!-- Lower Eyelid -->
+    <path d="M 90 117 C 145 163 255 163 310 117" stroke-width="20" />
+    
+    <!-- Solid Pupil -->
+    <circle cx="200" cy="113" r="42" fill="#C5A059" stroke="none" />
+    
+    <!-- Left Sweeping Cheek Line -->
+    <path d="M 95 123 C 140 185 210 235 315 215" stroke-width="22" />
+    
+    <!-- Right Spiral Falcon Coil -->
+    <path d="M 262 137 C 272 170 298 177 298 203 C 298 237 252 247 242 213 C 234 189 264 171 282 187 C 292 195 290 210 280 213 C 270 215 265 205 270 199" stroke-width="20" />
+  </g>
+</svg>
