@@ -58,7 +58,8 @@ export interface ShipOrderRequest {
 
 export interface TrackingCheckpoint {
   timestamp: string;
-  status: string;
+  title?: string;
+  status?: string;
   statusCode: string;
   location: string;
   description: string;

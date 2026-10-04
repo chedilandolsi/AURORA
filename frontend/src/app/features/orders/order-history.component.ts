@@ -315,18 +315,19 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                   <div *ngFor="let step of trackingData[order.id].checkpoints; let i = index" class="relative group">
                     
                     <!-- Milestone Node Indicator -->
-                    <div class="absolute -left-6 sm:-left-8 top-1 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
-                      [ngClass]="step.completed ? 'bg-amber-400 border-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.6)]' : 'bg-aurora-darker border-aurora-border'">
+                    <div class="absolute -left-6 sm:-left-8 top-1 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300"
+                      [ngClass]="step.completed ? 'bg-amber-400 border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.7)]' : 'bg-aurora-darker border-aurora-border'">
                       <div *ngIf="step.completed" class="w-1.5 h-1.5 rounded-full bg-aurora-darker"></div>
                     </div>
 
-                    <div class="p-4 rounded-xl transition-all"
-                      [ngClass]="step.completed ? 'bg-aurora-card/80 border border-amber-500/30' : 'bg-aurora-card/30 border border-aurora-border/40 opacity-70'">
+                    <div class="p-4 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5"
+                      [ngClass]="step.completed ? 'bg-aurora-card/90 border border-amber-500/40 shadow-lg' : 'bg-aurora-card/30 border border-aurora-border/40 opacity-60'">
                       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
                         <div class="flex items-center gap-2">
-                          <span class="font-bold text-white font-serif">{{ step.status }}</span>
-                          <span *ngIf="step.completed" class="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30">
-                            Completed
+                          <span class="font-bold text-white font-serif">{{ step.title || step.status || step.statusCode }}</span>
+                          <span *ngIf="step.completed" class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 font-mono">
+                            <span>✓</span>
+                            <span>Processed</span>
                           </span>
                         </div>
                         <span class="text-[10px] font-mono text-aurora-sand/60">
@@ -334,11 +335,12 @@ import { ImageUrlPipe } from '../../core/pipes/image-url.pipe';
                         </span>
                       </div>
 
-                      <div class="text-[11px] font-mono text-aurora-gold mt-1">
-                        📍 {{ step.location }}
+                      <div class="text-[11px] font-mono text-aurora-gold mt-1.5 flex items-center gap-1.5">
+                        <span class="text-amber-400">📍</span>
+                        <span>{{ step.location }}</span>
                       </div>
 
-                      <p class="text-xs text-aurora-sand/80 mt-1 leading-relaxed">
+                      <p class="text-xs text-aurora-sand/80 mt-1.5 leading-relaxed">
                         {{ step.description }}
                       </p>
                     </div>

@@ -631,10 +631,10 @@ import { OrderResponse, OrderStatus, TrackingResponse } from '../../../core/mode
               </div>
               <div class="pb-4 flex-1">
                 <div class="flex items-center justify-between text-xs">
-                  <span class="font-bold text-white">{{ cp.status }}</span>
+                  <span class="font-bold text-white">{{ cp.title || cp.status || cp.statusCode }}</span>
                   <span class="text-[10px] font-mono text-aurora-sand/50">{{ cp.timestamp | date:'medium' }}</span>
                 </div>
-                <div class="text-[11px] text-aurora-gold font-mono">{{ cp.location }}</div>
+                <div class="text-[11px] text-aurora-gold font-mono">📍 {{ cp.location }}</div>
                 <p class="text-xs text-aurora-sand/70 mt-1 leading-relaxed">{{ cp.description }}</p>
               </div>
             </div>

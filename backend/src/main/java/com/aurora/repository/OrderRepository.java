@@ -34,6 +34,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     List<Order> findByStatusOrderByCreatedAtDesc(com.aurora.model.entity.OrderStatus status);
 
+    List<Order> findByStatus(com.aurora.model.entity.OrderStatus status);
+
     List<Order> findAllByOrderByCreatedAtDesc();
 
     long countByPaymentMethodAndStatus(com.aurora.model.entity.PaymentMethod paymentMethod,
