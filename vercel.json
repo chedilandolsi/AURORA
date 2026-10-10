@@ -5,11 +5,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://aurora-backend.onrender.com/api/$1"
+      "destination": "https://aurora-backend-s66d.onrender.com/api/$1"
     },
     {
       "source": "/uploads/(.*)",
-      "destination": "https://aurora-backend.onrender.com/uploads/$1"
+      "destination": "https://aurora-backend-s66d.onrender.com/uploads/$1"
     },
     {
       "source": "/(.*)",
