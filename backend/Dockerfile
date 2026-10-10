@@ -22,8 +22,10 @@ WORKDIR /app
 # Install curl for health checks
 RUN apk add --no-cache curl tzdata
 
-# Security: Non-privileged user
-RUN addgroup -S aurora && adduser -S aurora -G aurora
+# Security: Non-privileged user and writable uploads directory
+RUN addgroup -S aurora && adduser -S aurora -G aurora && \
+    mkdir -p /app/uploads/products /app/uploads/simulations && \
+    chown -R aurora:aurora /app
 USER aurora:aurora
 
 # Copy executable jar

@@ -19,7 +19,10 @@ WORKDIR /app
 
 RUN apk add --no-cache curl tzdata
 
-RUN addgroup -S aurora && adduser -S aurora -G aurora
+RUN addgroup -S aurora && adduser -S aurora -G aurora && \
+    mkdir -p /app/uploads/products /app/uploads/simulations && \
+    chown -R aurora:aurora /app
+
 USER aurora:aurora
 
 COPY --from=backend-builder --chown=aurora:aurora /workspace/target/aurora-backend-*.jar app.jar
@@ -27,6 +30,7 @@ COPY --from=backend-builder --chown=aurora:aurora /workspace/target/aurora-backe
 ENV JAVA_OPTS="-XX:+UseSerialGC -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
+ENV UPLOAD_DIR=/app/uploads/products
 
 EXPOSE 8080
 
