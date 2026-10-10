@@ -47,4 +47,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") UUID id);
+
+    /** Locks the order row by Stripe Checkout Session ID to ensure idempotent webhook processing without race conditions. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT o FROM Order o WHERE o.stripeCheckoutSessionId = :sessionId")
+    Optional<Order> findByStripeCheckoutSessionIdForUpdate(@org.springframework.data.repository.query.Param("sessionId") String sessionId);
 }

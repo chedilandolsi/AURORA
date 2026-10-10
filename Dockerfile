@@ -1,40 +1,36 @@
 # ==============================================================================
-# Aurora Artisanal E-Commerce - Production Multi-Stage Dockerfile
+# Aurora Full-Stack / Backend Production Multi-Stage Dockerfile
+# Optimized for free container tiers (Render / Railway) with 512MB RAM cap
 # ==============================================================================
 
-# Stage 1: Build Angular 17 Frontend
-FROM node:18-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build -- --configuration=production
+# Stage 1: Build Spring Boot 3 Backend
+FROM maven:3.9.6-eclipse-temurin-17-alpine AS backend-builder
+WORKDIR /workspace
 
-# Stage 2: Build Spring Boot 3 Backend
-FROM maven:3.9.6-eclipse-temurin-17 AS backend-builder
-WORKDIR /app/backend
-COPY backend/pom.xml ./
+COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
-COPY backend/src ./src
-# Copy built Angular static assets into Spring Boot's static resources folder
-COPY --from=frontend-builder /app/frontend/dist/frontend/browser/ ./src/main/resources/static/
-RUN mvn clean package -DskipTests
 
-# Stage 3: Lightweight Production JRE Runtime
+COPY backend/src ./src
+RUN mvn clean package -DskipTests -B
+
+# Stage 2: Minimal Production JRE Runtime
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Security: Non-root user
+RUN apk add --no-cache curl tzdata
+
 RUN addgroup -S aurora && adduser -S aurora -G aurora
 USER aurora:aurora
 
-COPY --from=backend-builder --chown=aurora:aurora /app/backend/target/aurora-backend-*.jar app.jar
+COPY --from=backend-builder --chown=aurora:aurora /workspace/target/aurora-backend-*.jar app.jar
 
+ENV JAVA_OPTS="-XX:+UseSerialGC -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
+
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/categories || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/swagger-ui.html || exit 1
 
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

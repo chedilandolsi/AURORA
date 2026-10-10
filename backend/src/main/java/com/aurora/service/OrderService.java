@@ -119,11 +119,11 @@ public class OrderService {
 
     @Transactional
     public void markOrderAsPaid(String sessionId, String paymentIntentId) {
-        Order order = orderRepository.findByStripeCheckoutSessionId(sessionId)
+        Order order = orderRepository.findByStripeCheckoutSessionIdForUpdate(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order with Stripe session ID: " + sessionId + " not found"));
 
         if (order.getPaymentStatus() == PaymentStatus.PAID) {
-            log.info("Order #{} is already marked as PAID", order.getOrderNumber());
+            log.info("Order #{} is already marked as PAID. Skipping duplicate webhook execution.", order.getOrderNumber());
             return;
         }
 

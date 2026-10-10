@@ -57,7 +57,14 @@ public class StripePaymentService {
         // 1. Create order in database
         Order order = orderService.createOrder(request, userId);
 
-        String currencyCode = order.getCurrency().toLowerCase(); // "eur" or "usd"
+        // Multi-currency handling: sanitize and support both EUR and USD for European and US buyers
+        String currencyCode = "eur";
+        if (order.getCurrency() != null && !order.getCurrency().isBlank()) {
+            String c = order.getCurrency().trim().toLowerCase();
+            if ("usd".equals(c) || "eur".equals(c)) {
+                currencyCode = c;
+            }
+        }
 
         // 2. Build Stripe Line Items
         List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
@@ -128,14 +135,14 @@ public class StripePaymentService {
             // Link session ID to order
             order.setStripeCheckoutSessionId(session.getId());
 
-            log.info("Created Stripe Checkout Session {} for order #{}", session.getId(), order.getOrderNumber());
+            log.info("Created Stripe Checkout Session {} for order #{} in currency {}", session.getId(), order.getOrderNumber(), currencyCode);
 
             return CheckoutSessionResponse.builder()
                     .sessionId(session.getId())
                     .checkoutUrl(session.getUrl())
                     .orderNumber(order.getOrderNumber())
                     .totalAmount(order.getTotalAmount())
-                    .currency(order.getCurrency())
+                    .currency(currencyCode.toUpperCase())
                     .build();
 
         } catch (StripeException e) {
@@ -164,26 +171,32 @@ public class StripePaymentService {
 
     public void handleWebhookEvent(String payload, String sigHeader) {
         Event event = null;
+        boolean isConfiguredSecret = stripeWebhookSecret != null 
+                && !stripeWebhookSecret.isBlank() 
+                && !stripeWebhookSecret.contains("placeholder")
+                && !stripeWebhookSecret.contains("whsec_test_secret");
+
         try {
-            if (sigHeader != null && stripeWebhookSecret != null 
-                    && !stripeWebhookSecret.contains("whsec_test_secret") 
-                    && !stripeWebhookSecret.contains("placeholder")
-                    && !stripeWebhookSecret.isBlank()) {
+            if (isConfiguredSecret) {
+                // Strict cryptographic verification with Stripe SDK
+                if (sigHeader == null || sigHeader.isBlank()) {
+                    log.error("Webhook rejected: Missing Stripe-Signature header while webhook secret is configured");
+                    throw new BadRequestException("Missing Stripe-Signature header");
+                }
                 event = Webhook.constructEvent(payload, sigHeader, stripeWebhookSecret);
+                log.info("Cryptographic signature successfully verified for Stripe event: {}", event.getId());
             } else {
-                // In local dev/sandbox environment or direct test payloads
+                // Local dev test sandbox only (when webhook secret is not yet set)
+                log.warn("Stripe webhook secret not configured. Parsing direct payload for local dev/testing.");
                 event = Event.GSON.fromJson(payload, Event.class);
             }
         } catch (SignatureVerificationException e) {
-            log.warn("Stripe webhook signature verification failed, falling back to JSON deserialization for sandbox testing: {}", e.getMessage());
-            try {
-                event = Event.GSON.fromJson(payload, Event.class);
-            } catch (Exception ex) {
-                log.error("Failed to parse fallback webhook payload", ex);
-                throw new BadRequestException("Invalid webhook payload");
-            }
+            log.error("Strict cryptographic signature verification FAILED: {}", e.getMessage());
+            throw new BadRequestException("Invalid Stripe cryptographic signature: " + e.getMessage());
+        } catch (BadRequestException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Error parsing Stripe webhook", e);
+            log.error("Error parsing Stripe webhook payload: {}", e.getMessage(), e);
             throw new BadRequestException("Invalid webhook payload: " + e.getMessage());
         }
 
