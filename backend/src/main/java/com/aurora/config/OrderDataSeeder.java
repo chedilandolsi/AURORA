@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Slf4j
 @Component
+@org.springframework.context.annotation.Profile("!prod")
 @org.springframework.core.annotation.Order(20)
 @RequiredArgsConstructor
 public class OrderDataSeeder implements CommandLineRunner {
