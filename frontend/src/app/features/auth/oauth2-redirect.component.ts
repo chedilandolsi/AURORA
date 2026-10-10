@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -19,12 +19,17 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class OAuth2RedirectComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
 
   ngOnInit(): void {
-    const token = this.route.snapshot.queryParams['token'];
+    const params = this.route.snapshot.queryParams;
+    const token = params['token'] || params['access_token'] || params['jwt'];
     if (token) {
       this.authService.handleOAuth2Redirect(token);
+    } else {
+      console.warn('No authentication token found in OAuth2 callback params:', params);
+      this.router.navigate(['/auth'], { queryParams: { error: 'oauth_missing_token' } });
     }
   }
 }

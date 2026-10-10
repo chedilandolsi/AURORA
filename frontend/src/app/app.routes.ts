@@ -49,7 +49,18 @@ export const routes: Routes = [
   },
   {
     path: 'auth/oauth2-redirect',
-    loadComponent: () => import('./features/auth/oauth2-redirect.component').then(m => m.OAuth2RedirectComponent)
+    loadComponent: () => import('./features/auth/oauth2-redirect.component').then(m => m.OAuth2RedirectComponent),
+    title: 'Completing Sign In | Aurora Atelier'
+  },
+  {
+    path: 'oauth2/callback',
+    loadComponent: () => import('./features/auth/oauth2-redirect.component').then(m => m.OAuth2RedirectComponent),
+    title: 'Completing Sign In | Aurora Atelier'
+  },
+  {
+    path: 'oauth2/redirect',
+    loadComponent: () => import('./features/auth/oauth2-redirect.component').then(m => m.OAuth2RedirectComponent),
+    title: 'Completing Sign In | Aurora Atelier'
   },
   // Admin Routes with RBAC Guard
   {

@@ -11,6 +11,14 @@
       "destination": "https://aurora-backend-s66d.onrender.com/uploads/$1"
     },
     {
+      "source": "/oauth2/(.*)",
+      "destination": "https://aurora-backend-s66d.onrender.com/oauth2/$1"
+    },
+    {
+      "source": "/login/oauth2/(.*)",
+      "destination": "https://aurora-backend-s66d.onrender.com/login/oauth2/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

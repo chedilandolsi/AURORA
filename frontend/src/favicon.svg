@@ -1,22 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
-  <rect width="100" height="100" rx="20" fill="#0d0c0a"/>
-  <g transform="translate(10, 8) scale(0.2)" stroke="#C5A059" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Luxurious Atelier Dark Slate Backdrop -->
+  <rect width="100" height="100" rx="22" fill="#0D0C0A"/>
+  
+  <!-- Subtle Amber Rim Aura -->
+  <rect x="2" y="2" width="96" height="96" rx="20" stroke="#C5A059" stroke-width="1.2" stroke-opacity="0.3"/>
+  
+  <!-- Eye of Horus Icon Mark in Signature Aurora Gold (#C5A059) -->
+  <g stroke="#C5A059" stroke-linecap="round" stroke-linejoin="round">
     <!-- Top Eyebrow -->
-    <path d="M 80 80 C 145 47 255 47 320 80" stroke-width="22" />
+    <path d="M 18 26 C 36 17 64 17 82 26" stroke-width="3.2" />
     
     <!-- Upper Eyelid -->
-    <path d="M 80 113 C 145 71 255 71 320 113" stroke-width="20" />
+    <path d="M 18 38 C 36 27 64 27 82 38" stroke-width="3.2" />
     
     <!-- Lower Eyelid -->
-    <path d="M 90 117 C 145 163 255 163 310 117" stroke-width="20" />
+    <path d="M 22 40 C 38 52 62 52 78 40" stroke-width="3.2" />
     
     <!-- Solid Pupil -->
-    <circle cx="200" cy="113" r="42" fill="#C5A059" stroke="none" />
+    <circle cx="50" cy="38.5" r="6.5" fill="#C5A059" stroke="none" />
     
-    <!-- Left Sweeping Cheek Line -->
-    <path d="M 95 123 C 140 185 210 235 315 215" stroke-width="22" />
+    <!-- Sweeping Cheek Line -->
+    <path d="M 23 43 C 38 60 58 74 80 68" stroke-width="3.2" />
     
-    <!-- Right Spiral Falcon Coil -->
-    <path d="M 262 137 C 272 170 298 177 298 203 C 298 237 252 247 242 213 C 234 189 264 171 282 187 C 292 195 290 210 280 213 C 270 215 265 205 270 199" stroke-width="20" />
+    <!-- Falcon Spiral Coil -->
+    <path d="M 66 46 C 72 58 75 68 70 76 C 62 82 56 72 62 66" stroke-width="2.6" />
   </g>
 </svg>

@@ -43,8 +43,11 @@ export class AuthService {
   }
 
   loginWithGoogle(): void {
-    // Redirect to Spring Boot OAuth2 authorization endpoint
-    window.location.href = `${environment.apiUrl.replace('/api', '')}/oauth2/authorization/google`;
+    // Redirect directly to Spring Boot backend OAuth2 authorization endpoint
+    const backendOrigin = environment.production
+      ? 'https://aurora-backend-s66d.onrender.com'
+      : (environment.apiUrl.startsWith('http') ? environment.apiUrl.replace('/api', '') : 'http://localhost:8080');
+    window.location.href = `${backendOrigin}/oauth2/authorization/google`;
   }
 
   handleOAuth2Redirect(token: string): void {
