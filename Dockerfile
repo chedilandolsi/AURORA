@@ -27,7 +27,7 @@ USER aurora:aurora
 
 COPY --from=backend-builder --chown=aurora:aurora /workspace/target/aurora-backend-*.jar app.jar
 
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:+UseSerialGC -XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
 ENV UPLOAD_DIR=/app/uploads/products

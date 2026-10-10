@@ -35,7 +35,7 @@ COPY --from=builder --chown=aurora:aurora /workspace/target/aurora-backend-*.jar
 # - UseSerialGC minimizes GC memory overhead on <= 1 vCPU instances
 # - MaxRAMPercentage=75.0 reserves 25% host RAM for off-heap, JVM metadata & thread stacks
 # - ExitOnOutOfMemoryError ensures immediate fast restart on OOM
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:+UseSerialGC -XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-Xmx256m -Xms128m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
 
