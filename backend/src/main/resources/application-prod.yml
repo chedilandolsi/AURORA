@@ -1,6 +1,10 @@
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+  tomcat:
+    remote-ip-header: x-forwarded-for
+    protocol-header: x-forwarded-proto
+    internal-proxies: ".*"
   servlet:
     context-path: /
 
@@ -8,6 +12,12 @@ spring:
   config:
     activate:
       on-profile: prod
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: https://aurora-backend-s66d.onrender.com/login/oauth2/code/google
   datasource:
     url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/aurora_db}}
     username: ${SPRING_DATASOURCE_USERNAME:aurora_user}
@@ -37,5 +47,5 @@ logging:
   level:
     root: INFO
     com.aurora: INFO
-    org.springframework.security: WARN
+    org.springframework.security: INFO
     org.hibernate: ERROR
