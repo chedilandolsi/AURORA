@@ -43,6 +43,7 @@ public class DatabaseConfig {
         config.setIdleTimeout(300000);
         config.setConnectionTimeout(20000);
         config.setMaxLifetime(1200000);
+        config.addDataSourceProperty("prepareThreshold", "0");
 
         String effectiveUrl = (databaseUrl != null && !databaseUrl.isBlank()) ? databaseUrl : springDatasourceUrl;
 
@@ -77,9 +78,12 @@ public class DatabaseConfig {
 
                 if (query != null && !query.isBlank()) {
                     jdbcUrl.append("?").append(query);
+                    if (!query.contains("prepareThreshold")) {
+                        jdbcUrl.append("&prepareThreshold=0");
+                    }
                 } else {
                     // Require SSL by default for cloud hosted databases
-                    jdbcUrl.append("?sslmode=require");
+                    jdbcUrl.append("?sslmode=require&prepareThreshold=0");
                 }
 
                 config.setJdbcUrl(jdbcUrl.toString());

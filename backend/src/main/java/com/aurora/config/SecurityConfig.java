@@ -83,7 +83,7 @@ public class SecurityConfig {
                                 "/login/oauth2/code/**"
                         ).permitAll()
                         // Public API endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments/create-checkout-session").permitAll()
