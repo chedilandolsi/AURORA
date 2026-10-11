@@ -12,8 +12,8 @@
       "destination": "https://aurora-backend-s66d.onrender.com/uploads/$1"
     },
     {
-      "source": "/oauth2/(.*)",
-      "destination": "https://aurora-backend-s66d.onrender.com/oauth2/$1"
+      "source": "/oauth2/authorization/(.*)",
+      "destination": "https://aurora-backend-s66d.onrender.com/oauth2/authorization/$1"
     },
     {
       "source": "/login/oauth2/(.*)",

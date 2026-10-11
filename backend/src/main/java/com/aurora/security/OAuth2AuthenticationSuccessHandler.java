@@ -24,8 +24,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
-    @Value("${app.client.url:http://localhost:4200}")
+    @Value("${app.client.url:https://aurora-creation-atelier.vercel.app}")
     private String clientUrl;
 
     @Override
@@ -75,9 +76,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String token = tokenProvider.generateTokenFromUserId(user.getId(), user.getEmail());
 
-        String targetUrl = UriComponentsBuilder.fromUriString(clientUrl + "/auth/oauth2-redirect")
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+
+        String baseUrl = clientUrl.endsWith("/") ? clientUrl.substring(0, clientUrl.length() - 1) : clientUrl;
+
+        String targetUrl = UriComponentsBuilder.fromUriString(baseUrl + "/oauth2/redirect")
                 .queryParam("token", token)
                 .build().toUriString();
+
+        log.info("Redirecting authenticated OAuth2 user ({}) to: {}", email, targetUrl);
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
