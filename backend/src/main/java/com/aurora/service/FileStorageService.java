@@ -31,13 +31,52 @@ public class FileStorageService {
         this.rootLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
     }
 
+    @Value("${supabase.url:https://bmcbrphlhclsveunvpsu.supabase.co}")
+    private String supabaseUrl;
+
+    @Value("${supabase.anon-key:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtY2JycGhsaGNsc3ZldW52cHN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MzE1OTcsImV4cCI6MjEwNzIwNzU5N30.UlsgbydxWlqxiVSVTn4TNR2e_I2mTgtqRKtihRm5nh4}")
+    private String supabaseAnonKey;
+
+    @Value("${supabase.storage.bucket:products}")
+    private String storageBucket;
+
     @PostConstruct
     public void init() {
         try {
             Files.createDirectories(rootLocation);
             log.info("Initialized secure file storage at: {}", rootLocation);
+            seedDefaultAssets();
         } catch (IOException e) {
-            throw new RuntimeException("Could not initialize storage directory", e);
+            log.error("Could not initialize storage directory", e);
+        }
+    }
+
+    private void seedDefaultAssets() {
+        List<String> seeds = Arrays.asList(
+                "default-mask.jpg",
+                "2b8fe40f-22d1-4a03-852e-d9ef2b6a0d48.jpg",
+                "c9fa8adc-14c8-4f9e-90a6-d19474db66f8.jpg",
+                "c9b296c7-9b7b-4ed7-8061-1728e760b6f7.jpg",
+                "8acf3584-4eda-4a31-9e0b-7ae21eefde99.jpg",
+                "8263a3cd-ca8a-480f-84b9-a64e6aad2720.jpg"
+        );
+
+        for (String seedName : seeds) {
+            Path targetFile = this.rootLocation.resolve(seedName);
+            if (!Files.exists(targetFile) || targetFile.toFile().length() == 0) {
+                try {
+                    org.springframework.core.io.ClassPathResource resource =
+                            new org.springframework.core.io.ClassPathResource("static/images/masks/" + seedName);
+                    if (resource.exists()) {
+                        try (InputStream in = resource.getInputStream()) {
+                            Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                            log.info("Seeded product asset to storage: {}", seedName);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not copy seed {}: {}", seedName, e.getMessage());
+                }
+            }
         }
     }
 
@@ -76,11 +115,31 @@ public class FileStorageService {
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             log.info("Successfully stored uploaded image as: {}", uniqueFilename);
+            backupToSupabase(uniqueFilename, contentType, destinationFile);
             return "/uploads/products/" + uniqueFilename;
         } catch (IOException e) {
             log.error("Failed to store file: {}", originalFilename, e);
             throw new RuntimeException("Failed to store uploaded file: " + e.getMessage(), e);
         }
+    }
+
+    private void backupToSupabase(String fileName, String contentType, Path localPath) {
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                String uploadUrl = String.format("%s/storage/v1/object/%s/%s",
+                        supabaseUrl.replaceAll("/+$", ""), storageBucket, fileName);
+                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                headers.setBearerAuth(supabaseAnonKey);
+                headers.set("Content-Type", contentType);
+                headers.set("x-upsert", "true");
+                byte[] data = Files.readAllBytes(localPath);
+                org.springframework.http.HttpEntity<byte[]> requestEntity = new org.springframework.http.HttpEntity<>(data, headers);
+                new org.springframework.web.client.RestTemplate().postForEntity(uploadUrl, requestEntity, String.class);
+                log.info("Successfully backed up uploaded image {} to Supabase Storage", fileName);
+            } catch (Exception e) {
+                log.warn("Could not backup {} to Supabase Storage: {}", fileName, e.getMessage());
+            }
+        });
     }
 
     public List<String> storeFiles(List<MultipartFile> files) {

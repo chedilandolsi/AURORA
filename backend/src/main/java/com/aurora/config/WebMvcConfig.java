@@ -29,11 +29,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         }
 
         registry.addResourceHandler("/uploads/products/**")
-                .addResourceLocations(uploadProductsUri, "file:uploads/products/", "file:./uploads/products/")
+                .addResourceLocations(uploadProductsUri, "file:uploads/products/", "file:./uploads/products/", "classpath:/static/images/masks/")
                 .setCachePeriod(3600);
 
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(baseUploadsUri, "file:uploads/", "file:./uploads/")
+                .addResourceLocations(baseUploadsUri, "file:uploads/", "file:./uploads/", "classpath:/static/images/masks/", "classpath:/static/")
                 .setCachePeriod(3600);
     }
 }
