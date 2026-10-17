@@ -2,5 +2,5 @@ export const environment = {
   production: true,
   apiUrl: '/api',
   assetBaseUrl: '',
-  stripePublishableKey: 'pk_test_51Svihe2NdpBINd1ktWM9fklCXX5QgvBdQbSXM8MMNDhxlNSh8yPaSejOa9A4XZhizTVzOgQcakwcoH7SlDi3rmcO00wl78iV37'
+  stripePublishableKey: 'pk_live_51URVOHPpyNLcFUhiQzUYHWqflSp4COOueDYxYWORVPPxdvwRBRj1KD74H1I3x0ynNgWN8gDLeDR4MzfXPH0OHunT00c2nMlAs9'
 };
